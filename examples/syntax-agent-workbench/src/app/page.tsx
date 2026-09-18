@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   Bot,
   Check,
@@ -156,6 +156,17 @@ function updateNodes(state: AgentState, updates: Partial<AgentNode>[], focus?: s
   return { ...state, focus: focus ?? state.focus, nodes: state.nodes.map((node) => ({ ...node, ...(updateById.get(node.id) ?? {}) })), updatedAt: "刚刚" };
 }
 
+type ModelPatch = {
+  focus?: string;
+  summary?: string;
+  nodes?: Partial<AgentNode>[];
+};
+
+type ModelResponse = {
+  reply?: string;
+  patch?: ModelPatch;
+};
+
 function buildLocalResponse(text: string, state: AgentState) {
   const lower = text.toLowerCase();
   if (lower.includes("记忆") || lower.includes("memory")) {
@@ -167,14 +178,54 @@ function buildLocalResponse(text: string, state: AgentState) {
   return { reply: "演示模式：我已记录这条想法。请继续指定它影响的实体、约束或任务节点；配置 API Key 后可以让模型直接返回结构化更新。", nextState: { ...state, summary: text.slice(0, 72), updatedAt: "刚刚" } };
 }
 
-function parseModelResponse(content: string, state: AgentState) {
-  try {
-    const parsed = JSON.parse(content) as { reply?: string; patch?: { focus?: string; summary?: string; nodes?: Partial<AgentNode>[] } };
-    const patch = parsed.patch ?? {};
-    return { reply: parsed.reply ?? "我完成了结构化分析，但没有返回额外说明。", nextState: updateNodes({ ...state, summary: patch.summary ?? state.summary }, patch.nodes ?? [], patch.focus) };
-  } catch {
-    return { reply: content, nextState: state };
+function extractJsonObject(content: string): ModelResponse | null {
+  const normalized = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const candidates = [normalized];
+  const firstBrace = normalized.indexOf("{");
+  const lastBrace = normalized.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(normalized.slice(firstBrace, lastBrace + 1));
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as ModelResponse;
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+      // Providers sometimes add prose around an otherwise valid JSON object.
+    }
   }
+  return null;
+}
+
+function inferLocalPatch(text: string, state: AgentState) {
+  const lower = text.toLowerCase();
+  const target = state.nodes.find((node) => lower.includes(node.id.toLowerCase()) || lower.includes(node.label.toLowerCase()));
+  if (!target) return null;
+  const status: NodeStatus = lower.includes("完成") || lower.includes("验证") || lower.includes("verified") ? "verified" : lower.includes("确认") || lower.includes("输入") ? "needs_input" : "in_progress";
+  return { id: target.id, status, detail: `根据当前请求更新：${text.slice(0, 72)}` } satisfies Partial<AgentNode>;
+}
+
+function parseModelResponse(content: string, state: AgentState, userText: string) {
+  const parsed = extractJsonObject(content);
+  if (parsed) {
+    const patch = parsed.patch ?? {};
+    const validIds = new Set(state.nodes.map((node) => node.id));
+    const safeNodes = (patch.nodes ?? []).filter((node) => typeof node.id === "string" && validIds.has(node.id)).map((node) => ({
+      ...node,
+      confidence: typeof node.confidence === "number" ? Math.max(0, Math.min(1, node.confidence)) : undefined,
+    }));
+    return { reply: parsed.reply ?? "我完成了结构化分析，但没有返回额外说明。", nextState: updateNodes({ ...state, summary: patch.summary ?? state.summary }, safeNodes, patch.focus), parsed: true };
+  }
+
+  const inferred = inferLocalPatch(userText, state);
+  return {
+    reply: content,
+    nextState: inferred ? updateNodes(state, [inferred], state.nodes.find((node) => node.id === inferred.id)?.label) : state,
+    parsed: false,
+  };
 }
 
 export default function Home() {
@@ -182,24 +233,25 @@ export default function Home() {
   const [agentState, setAgentState] = useState<AgentState>(defaultState);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
-  const [config, setConfig] = useState<ApiConfig>(defaultConfig);
+  const [config, setConfig] = useState<ApiConfig>(() => {
+    if (typeof window === "undefined") return defaultConfig;
+    const stored = window.localStorage.getItem("syntax-agent-config");
+    if (!stored) return defaultConfig;
+    try {
+      const nextConfig = { ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) };
+      if (!nextConfig.model || nextConfig.model === "gpt-4o-mini") nextConfig.model = "gpt-5.5";
+      return nextConfig;
+    } catch {
+      window.localStorage.removeItem("syntax-agent-config");
+      return defaultConfig;
+    }
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ goal: true, plan: true });
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = uiCopy[locale];
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem("syntax-agent-config");
-    if (stored) {
-      try {
-        const nextConfig = { ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) };
-        if (!nextConfig.model || nextConfig.model === "gpt-4o-mini") nextConfig.model = "gpt-5.5";
-        setConfig(nextConfig);
-      } catch { window.localStorage.removeItem("syntax-agent-config"); }
-    }
-  }, []);
 
   const visibleJson = useMemo(() => JSON.stringify(agentState, null, 2), [agentState]);
 
@@ -263,29 +315,38 @@ export default function Home() {
         return;
       }
       const baseUrl = config.baseUrl.replace(/\/$/, "");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 60000);
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey.trim()}` },
+        signal: controller.signal,
         body: JSON.stringify({
-          model: config.model.trim() || "gpt-4o-mini",
+          model: config.model.trim() || "gpt-5.5",
           temperature: 0.2,
+          stream: false,
           messages: [
-            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。请只返回 JSON：{reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>}}。只能更新已有节点，不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
+            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次都必须只返回一个有效 JSON 对象，不要 Markdown、不要代码围栏、不要解释性前后缀。格式是 {reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>}}。即使用户只是打招呼，也返回 patch:{}。只能更新当前结构中已有的节点 id，不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
             ...messages.slice(-8).map((message) => ({ role: message.role, content: message.content })),
             { role: "user", content: text },
             { role: "user", content: `当前结构 JSON：${visibleJson}` },
           ],
         }),
       });
-      if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
-      const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-      const content = payload.choices?.[0]?.message?.content;
-      if (!content) throw new Error("API 没有返回 assistant 内容。");
-      const parsed = parseModelResponse(content, agentState);
-      setAgentState(parsed.nextState);
-      setMessages((current) => [...current, { role: "assistant", content: parsed.reply, timestamp: nowLabel() }]);
+      try {
+        if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
+        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        const content = payload.choices?.[0]?.message?.content;
+        if (!content) throw new Error("API 没有返回 assistant 内容。");
+        const parsed = parseModelResponse(content, agentState, text);
+        setAgentState(parsed.nextState);
+        setMessages((current) => [...current, { role: "assistant", content: parsed.reply, timestamp: nowLabel() }]);
+      } finally {
+        window.clearTimeout(timeout);
+      }
     } catch (error) {
-      setMessages((current) => [...current, { role: "assistant", content: `调用失败：${error instanceof Error ? error.message : "未知错误"}。你也可以先清空 API Key 使用本地演示模式。`, timestamp: nowLabel() }]);
+      const message = error instanceof DOMException && error.name === "AbortError" ? "请求超过 60 秒仍未返回。请检查中转服务、模型名称或网络连接。" : error instanceof Error ? error.message : "未知错误";
+      setMessages((current) => [...current, { role: "assistant", content: `调用失败：${message} 你也可以先清空 API Key 使用本地演示模式。`, timestamp: nowLabel() }]);
     } finally { setIsSending(false); }
   }
 
