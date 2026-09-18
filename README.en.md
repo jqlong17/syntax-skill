@@ -44,6 +44,18 @@ The translated Chinese edition is available for online reading through [NottaShe
 - Create evaluation dimensions for a multi-agent workflow.
 - Analyze when an LLM output needs grounding, retrieval, or human approval.
 
+## Tool compatibility
+
+This repository supports both Codex and Cursor.
+
+### Codex
+
+Use `SKILL.md` as the entrypoint. Copy the repository into the Codex skills directory or invoke it explicitly as `$syntax-skill`.
+
+### Cursor
+
+Open this repository in Cursor to use the project rule at `.cursor/rules/syntax-skill.mdc`. The rule is agent-requested through its MDC frontmatter and routes Cursor to `SKILL.md`, the shared Agent Design Protocol, and only the domain references relevant to the current task. When copying it to another Cursor project, also copy `SKILL.md` and the `references/` directory so the relative paths and source map remain valid.
+
 ## Validation
 
 ```bash

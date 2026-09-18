@@ -60,7 +60,23 @@ Skill 由一个主入口、一个共享的 Agent 设计协议，以及八个可�
 
 ## 安装与使用
 
+本仓库同时支持 Codex 和 Cursor：
+
+### Codex
+
 将 `syntax-skill` 目录复制到 Codex skills 目录，或者安装后使用 `$syntax-skill` 显式调用。标准 skill 元数据保持自动发现，不需要额外配置。
+
+### Cursor
+
+直接在 Cursor 中打开本仓库即可使用项目规则 `.cursor/rules/syntax-skill.mdc`。Cursor 会根据规则描述判断何时加载它；也可以在对话中手动引用该规则。规则会引导 Cursor 先读取 `SKILL.md` 和 `references/agent-design-protocol.md`，再按当前任务选择需要的领域文件。
+
+如果要把它用于其他 Cursor 项目，可以复制以下内容到目标项目：
+
+1. `.cursor/rules/syntax-skill.mdc`；
+2. `SKILL.md`；
+3. `references/` 目录。
+
+这样规则中的相对路径和原文引用索引仍然有效。
 
 典型用途包括：
 

@@ -1,0 +1,40 @@
+---
+description: Use the Syntax Methodology when designing or reviewing AI, LLM, dialogue, memory, planning, tool-use, uncertainty, verification, or multi-agent systems. Read the shared protocol and only the domain references relevant to the current task.
+globs:
+alwaysApply: false
+---
+
+# Syntax Methodology for Cursor
+
+This project contains a portable methodology layer derived from Edward A. F. Gibson's *Syntax: A Cognitive Approach*. Use it when a design task involves the boundary between linguistic form, meaning, context, memory, planning, execution, or verification.
+
+## Read in this order
+
+1. Read `SKILL.md` for the core stance and domain routing.
+2. Read `references/agent-design-protocol.md` for the shared state model, control loop, decision gates, and output contract.
+3. Read only the relevant `references/domain-*.md` files; do not load all eight by default.
+4. Read `references/source-map.md` when a claim needs the book's surrounding context or a precise citation.
+
+## Required design behavior
+
+- Keep utterance, interpretation, world state, task graph, plan, execution, verification, and response as separate objects.
+- Treat model outputs as candidates until grounding, policy checks, tools, or validators accept them.
+- Represent unresolved dependencies explicitly instead of silently guessing.
+- Keep critical references local in the active state and preserve provenance for compressed memory.
+- Gate irreversible, permission-sensitive, or externally visible actions before execution.
+- After tool execution, verify postconditions and replan when evidence invalidates the current plan.
+- Cite source-grounded ideas with chapter, section, page, XHTML file, and anchor; label engineering extrapolations as applications.
+
+## Required architecture handoff
+
+When proposing an architecture, return:
+
+1. goal and unresolved ambiguities;
+2. typed dependency/task graph;
+3. noise and uncertainty inventory;
+4. memory layers and recovery paths;
+5. planning/execution/verification boundaries;
+6. evaluation dimensions and failure recovery;
+7. open decisions and one falsification test.
+
+Do not confuse fluent wording with factual grounding or task completion. The model may propose; explicit state, evidence, tools, policies, validators, or humans decide.
