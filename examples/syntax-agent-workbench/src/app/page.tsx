@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Bot,
   Check,
@@ -234,25 +234,27 @@ export default function Home() {
   const [agentState, setAgentState] = useState<AgentState>(defaultState);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
-  const [config, setConfig] = useState<ApiConfig>(() => {
-    if (typeof window === "undefined") return defaultConfig;
-    const stored = window.localStorage.getItem("syntax-agent-config");
-    if (!stored) return defaultConfig;
-    try {
-      const nextConfig = { ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) };
-      if (!nextConfig.model || nextConfig.model === "gpt-4o-mini") nextConfig.model = "gpt-5.5";
-      return nextConfig;
-    } catch {
-      window.localStorage.removeItem("syntax-agent-config");
-      return defaultConfig;
-    }
-  });
+  const [config, setConfig] = useState<ApiConfig>(defaultConfig);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ goal: true, plan: true });
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = uiCopy[locale];
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("syntax-agent-config");
+    if (!stored) return;
+    try {
+      const nextConfig = { ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) };
+      if (!nextConfig.model || nextConfig.model === "gpt-4o-mini") nextConfig.model = "gpt-5.5";
+      // Browser storage is hydrated after the server/client markup has matched.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setConfig(nextConfig);
+    } catch {
+      window.localStorage.removeItem("syntax-agent-config");
+    }
+  }, []);
 
   const visibleJson = useMemo(() => JSON.stringify(agentState, null, 2), [agentState]);
 
