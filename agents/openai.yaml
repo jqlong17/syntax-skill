@@ -1,0 +1,4 @@
+interface:
+  display_name: "Syntax Methodology"
+  short_description: "Apply cognitive syntax principles to AI and agent design"
+  default_prompt: "Use $syntax-skill to design memory, dialogue, planning, tool-use, and evaluation systems grounded in Syntax: A Cognitive Approach."
