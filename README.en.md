@@ -2,6 +2,8 @@
 
 > The Chinese README is the default entry point: [README.md](README.md)
 
+> Read the Chinese edition online: <https://shelf.notta.uk/book/6f8d032b-5775-43a1-ab7f-1e0c98da8e38>
+
 `syntax-skill` is a reusable Codex skill that turns the central distinctions in Edward A. F. Gibson's *Syntax: A Cognitive Approach* into a practical theory layer for AI and agent design.
 
 It is intended for systems where language is only one part of the problem: memory, dialogue, task decomposition, planning, tool use, verification, uncertainty, and multi-agent coordination. The skill asks a prior question before adding more prompting: what structure, state, evidence, and control loop must exist outside the language model?
@@ -30,6 +32,8 @@ The core design risk in language-first systems is confusing a well-formed string
 Every domain reference includes the book and author, chapter and section, printed page range, original EPUB XHTML file, section and pagebreak anchors, and retrieval terms for reopening the surrounding context. See [references/source-map.md](references/source-map.md).
 
 The repository does not redistribute the full Chinese translation. See [references/source-assets.md](references/source-assets.md) for the official English open-access entry points, local file manifest, licensing notes, and private-resource workflow.
+
+The translated Chinese edition is available for online reading through [NottaShelf](https://shelf.notta.uk/book/6f8d032b-5775-43a1-ab7f-1e0c98da8e38).
 
 ## Typical uses
 

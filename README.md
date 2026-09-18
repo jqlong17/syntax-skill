@@ -2,6 +2,8 @@
 
 > 中文版为默认入口。English version: [README.en.md](README.en.md)
 
+> 在线阅读中文版：<https://shelf.notta.uk/book/6f8d032b-5775-43a1-ab7f-1e0c98da8e38>
+
 `syntax-skill` 是一个可复用的 Codex skill。它以 Edward A. F. Gibson 的《Syntax: A Cognitive Approach》为理论基础，把语言形式、依存结构、记忆、上下文、噪声、规划和验证等概念，转化为可用于 AI 与 Agent 架构设计的方法论。
 
 它适用于语言只是问题一部分的系统：长期记忆、对话管理、任务拆解、任务规划、工具调用、结果验证、不确定性处理和多 Agent 协作。它帮助设计者在继续增加 prompt 之前，先回答一个更基础的问题：语言模型之外，还需要哪些结构、状态、证据和控制循环？
@@ -50,6 +52,7 @@ Skill 由一个主入口、一个共享的 Agent 设计协议，以及八个可�
 
 本仓库提供可追溯的书籍资源入口，但不把整本中文译本直接公开打包进仓库：
 
+- 中文译本在线阅读：[NottaShelf 书籍页面](https://shelf.notta.uk/book/6f8d032b-5775-43a1-ab7f-1e0c98da8e38)。
 - 英文原书的官方开放获取入口、出版社信息和许可证见 [references/source-assets.md](references/source-assets.md)。
 - 中文译本的本地文件名、SHA-256、章节锚点映射和私有资源接入方式也记录在该文件中。
 - 中文译本属于原书的翻译改编版本，公开再分发需要额外的授权；因此 GitHub 仓库只保存索引和引用协议，不保存整本译本。
