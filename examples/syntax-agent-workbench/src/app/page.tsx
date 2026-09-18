@@ -5,7 +5,6 @@ import {
   Bot,
   Check,
   ChevronDown,
-  ChevronRight,
   CircleHelp,
   Copy,
   Download,
@@ -73,6 +72,26 @@ const modelOptions = [
   { value: "gpt-5.6-luna", label: "GPT-5.6 Luna" },
   { value: "gpt-5.2", label: "GPT-5.2" },
 ];
+
+const networkNodePositions: Record<string, { x: number; y: number }> = {
+  goal: { x: 28, y: 176 },
+  entities: { x: 330, y: 24 },
+  constraints: { x: 330, y: 176 },
+  plan: { x: 330, y: 328 },
+  memory: { x: 638, y: 252 },
+  verification: { x: 638, y: 404 },
+};
+
+const networkLinks = [
+  ["goal", "entities"],
+  ["goal", "constraints"],
+  ["goal", "plan"],
+  ["plan", "memory"],
+  ["plan", "verification"],
+] as const;
+
+const networkNodeWidth = 246;
+const networkNodeHeight = 118;
 const uiCopy = {
   zh: {
     title: "句法 Agent 工作台",
@@ -237,7 +256,6 @@ export default function Home() {
   const [config, setConfig] = useState<ApiConfig>(defaultConfig);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ goal: true, plan: true });
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = uiCopy[locale];
@@ -258,23 +276,45 @@ export default function Home() {
 
   const visibleJson = useMemo(() => JSON.stringify(agentState, null, 2), [agentState]);
 
-  function renderNode(id: string, depth = 0): React.ReactNode {
-    const node = agentState.nodes.find((item) => item.id === id);
-    if (!node) return null;
-    const hasChildren = Boolean(node.children?.length);
-    const isExpanded = expanded[node.id] ?? false;
+  function renderNetworkGraph() {
     return (
-      <div className={styles.nodeBranch} key={node.id}>
-        <div className={`${styles.node} ${agentState.focus === node.label ? styles.nodeFocused : ""}`} style={{ marginLeft: `${depth * 28}px` }}>
-          <div className={styles.nodeAccent} data-status={node.status} />
-          <div className={styles.nodeMain}>
-            <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{copy.status[node.status]}</span></div>
-            <div className={styles.nodeTitleRow}><strong>{node.label}</strong>{hasChildren ? <button className={styles.iconButton} aria-label={isExpanded ? "收起节点" : "展开节点"} onClick={() => setExpanded((current) => ({ ...current, [node.id]: !current[node.id] }))}>{isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button> : null}</div>
-            <p>{node.detail}</p>
-            <div className={styles.nodeMeta}><span>confidence {Math.round(node.confidence * 100)}%</span><span>id:{node.id}</span></div>
+      <div className={styles.networkViewport} aria-label="依存任务网络">
+        <div className={styles.networkStage}>
+          <svg className={styles.networkEdges} viewBox="0 0 930 540" role="img" aria-label="节点依赖连线">
+            <defs>
+              <marker id="network-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L8,4 L0,8 z" fill="#8d938e" />
+              </marker>
+            </defs>
+            {networkLinks.map(([sourceId, targetId]) => {
+              const source = networkNodePositions[sourceId];
+              const target = networkNodePositions[targetId];
+              const startX = source.x + networkNodeWidth;
+              const startY = source.y + networkNodeHeight / 2;
+              const endX = target.x;
+              const endY = target.y + networkNodeHeight / 2;
+              const bend = Math.max(38, Math.abs(endX - startX) * 0.42);
+              return <path key={`${sourceId}-${targetId}`} className={styles.networkEdge} d={`M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`} markerEnd="url(#network-arrow)" />;
+            })}
+          </svg>
+          <div className={styles.networkNodes}>
+            {agentState.nodes.map((node) => {
+              const position = networkNodePositions[node.id];
+              if (!position) return null;
+              return (
+                <div key={node.id} className={`${styles.node} ${styles.networkNode} ${agentState.focus === node.label ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }}>
+                  <div className={styles.nodeAccent} data-status={node.status} />
+                  <div className={styles.nodeMain}>
+                    <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{copy.status[node.status]}</span></div>
+                    <div className={styles.nodeTitleRow}><strong>{node.label}</strong></div>
+                    <p>{node.detail}</p>
+                    <div className={styles.nodeMeta}><span>confidence {Math.round(node.confidence * 100)}%</span><span>id:{node.id}</span></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-        {hasChildren && isExpanded ? <div className={styles.children}>{node.children?.map((childId) => renderNode(childId, depth + 1))}</div> : null}
       </div>
     );
   }
@@ -420,7 +460,7 @@ export default function Home() {
           <div className={styles.panelHeader}><div><div className={styles.panelKicker}>01 / {copy.structure}</div><h2>{agentState.title}</h2><p>{locale === "zh" ? agentState.summary : copy.summary}</p></div><div className={styles.panelHeaderActions}><button className={styles.iconTextButton} onClick={copyState} title={copy.copyJson}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? copy.copied : copy.copyJson}</button><button className={styles.iconTextButton} onClick={() => setJsonOpen((value) => !value)}><ChevronDown className={jsonOpen ? styles.rotated : ""} size={15} />JSON</button></div></div>
           <div className={styles.structureBody}>
             <div className={styles.structureIntro}><div className={styles.legend}><span><i data-status="in_progress" />{copy.status.in_progress}</span><span><i data-status="needs_input" />{copy.status.needs_input}</span><span><i data-status="verified" />{copy.status.verified}</span></div><div className={styles.focusLine}><span>{copy.currentFocus}</span><strong>{agentState.focus}</strong><span className={styles.updateTime}>{copy.updated} {agentState.updatedAt}</span></div></div>
-            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />{copy.graph}</div><div className={styles.graphTree}>{renderNode("goal")}</div><div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />{copy.unresolved}</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
+            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />{copy.graph}</div>{renderNetworkGraph()}<div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />{copy.unresolved}</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
             {jsonOpen ? <pre className={styles.jsonPanel}>{visibleJson}</pre> : null}
           </div>
         </section>

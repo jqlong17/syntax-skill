@@ -31,12 +31,18 @@
 .graphCanvas { min-height: 610px; padding: 22px; background: #fff; border: 1px solid #111; border-radius: 2px; }
 .graphLabel { display: flex; align-items: center; gap: 8px; color: #555; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .graphLabel span { width: 8px; height: 8px; border-radius: 50%; background: #111; }
-.graphTree { max-width: 760px; margin: 26px auto 36px; }
+.networkViewport { overflow-x: auto; margin: 18px -4px 30px; padding: 4px; }
+.networkStage { position: relative; width: 930px; height: 540px; margin: 0 auto; }
+.networkEdges, .networkNodes { position: absolute; inset: 0; width: 930px; height: 540px; }
+.networkEdges { z-index: 0; overflow: visible; }
+.networkEdge { fill: none; stroke: #aeb4af; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.networkNodes { z-index: 1; }
 .nodeBranch { position: relative; }
 .nodeBranch:not(:first-child) { margin-top: 14px; }
 .nodeBranch .children { position: relative; margin-top: 14px; }
 .nodeBranch .children::before { content: ""; position: absolute; left: 15px; top: -14px; bottom: 25px; border-left: 1px solid #aaa; }
 .node { position: relative; display: flex; overflow: hidden; background: #fff; border: 1px solid #111; border-radius: 2px; box-shadow: none; }
+.networkNode { position: absolute; width: 246px; height: 118px; margin: 0; }
 .nodeFocused { border-color: #111; box-shadow: inset 4px 0 0 #111; }
 .nodeAccent { width: 4px; flex: 0 0 4px; background: #a6aaa5; }
 .nodeAccent[data-status="in_progress"] { background: #d7874d; }
@@ -51,7 +57,7 @@
 .nodeStatus[data-status="verified"] { color: #3d7868; }
 .nodeTitleRow { justify-content: space-between; gap: 8px; margin-top: 7px; }
 .nodeTitleRow strong { font-size: 15px; }
-.nodeMain p { margin: 6px 0 10px; color: #555; font-size: 12px; line-height: 1.5; }
+.nodeMain p { display: -webkit-box; overflow: hidden; margin: 6px 0 10px; color: #555; font-size: 12px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .nodeMeta { gap: 12px; color: #888; font-family: monospace; font-size: 10px; }
 .children > .nodeBranch::before { content: ""; position: absolute; left: 15px; top: 26px; width: 16px; border-top: 1px solid #aaa; }
 .unresolvedStrip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 16px; border-top: 1px solid #111; }
@@ -107,4 +113,4 @@
 .modalNote { display: flex; gap: 7px; margin-top: 18px; padding-top: 14px; color: #555; border-top: 1px solid #111; font-size: 11px; line-height: 1.5; }
 
 @media (max-width: 980px) { .workspace { grid-template-columns: 1fr; } .structurePanel { border-right: 0; border-bottom: 1px solid #d9d5cc; } .chatPanel { min-height: 620px; } }
-@media (max-width: 680px) { .topbar, .panelHeader, .structureBody { padding-left: 18px; padding-right: 18px; } .topbar, .panelHeader, .structureIntro { align-items: flex-start; flex-direction: column; } .topActions { flex-wrap: wrap; } .graphCanvas { padding: 14px; } .node { margin-left: 0 !important; } .children > .nodeBranch::before, .nodeBranch .children::before { display: none; } .focusLine { flex-wrap: wrap; } }
+@media (max-width: 680px) { .topbar, .panelHeader, .structureBody { padding-left: 18px; padding-right: 18px; } .topbar, .panelHeader, .structureIntro { align-items: flex-start; flex-direction: column; } .topActions { flex-wrap: wrap; } .graphCanvas { padding: 14px; } .networkStage { margin-left: 0; } .focusLine { flex-wrap: wrap; } }
