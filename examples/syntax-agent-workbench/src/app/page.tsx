@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState, WheelEvent } from "react";
 import {
   Bot,
   Check,
@@ -11,13 +11,17 @@ import {
   Download,
   KeyRound,
   Languages,
+  Maximize2,
   Play,
   RotateCcw,
+  Scan,
   Send,
   Settings2,
   ShieldCheck,
   Sparkles,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import styles from "./page.module.css";
 import defaultStateJson from "./agent-state.json";
@@ -74,6 +78,10 @@ type ApiConfig = {
   apiKey: string;
   model: string;
 };
+
+type Point = { x: number; y: number };
+type GraphTransform = { scale: number; x: number; y: number };
+type GraphViewState = { positions: Record<string, Point>; transform: GraphTransform };
 
 const defaultState = defaultStateJson as AgentState;
 
@@ -135,6 +143,62 @@ const knowledgeNodePositions: Record<string, { x: number; y: number }> = {
 const knowledgeNodeWidth = 246;
 const knowledgeNodeHeight = 118;
 
+const defaultProcessPositions = networkNodePositions;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function layoutProcessGraph(): Record<string, Point> {
+  return {
+    goal: { x: 28, y: 176 },
+    entities: { x: 330, y: 24 },
+    constraints: { x: 330, y: 176 },
+    plan: { x: 330, y: 328 },
+    memory: { x: 638, y: 252 },
+    verification: { x: 638, y: 404 },
+  };
+}
+
+function layoutKnowledgeGraph(entities: KnowledgeEntity[], relations: KnowledgeRelation[]): Record<string, Point> {
+  const ids = entities.map((entity) => entity.id);
+  const adjacency = new Map(ids.map((id) => [id, new Set<string>()]));
+  relations.forEach((relation) => {
+    adjacency.get(relation.source)?.add(relation.target);
+    adjacency.get(relation.target)?.add(relation.source);
+  });
+  const root = [...ids].sort((a, b) => (adjacency.get(b)?.size ?? 0) - (adjacency.get(a)?.size ?? 0))[0];
+  const levels = new Map<string, number>();
+  if (root) {
+    const queue = [root];
+    levels.set(root, 0);
+    while (queue.length) {
+      const current = queue.shift() as string;
+      (adjacency.get(current) ?? new Set()).forEach((neighbor) => {
+        if (!levels.has(neighbor)) {
+          levels.set(neighbor, (levels.get(current) ?? 0) + 1);
+          queue.push(neighbor);
+        }
+      });
+    }
+  }
+  ids.forEach((id) => {
+    if (!levels.has(id)) levels.set(id, Math.max(0, levels.size % 4));
+  });
+  const grouped = new Map<number, string[]>();
+  ids.forEach((id) => {
+    const level = levels.get(id) ?? 0;
+    grouped.set(level, [...(grouped.get(level) ?? []), id]);
+  });
+  const positions: Record<string, Point> = {};
+  [...grouped.entries()].sort(([a], [b]) => a - b).forEach(([level, levelIds]) => {
+    levelIds.forEach((id, index) => {
+      positions[id] = { x: 28 + level * 302, y: 28 + index * 162 };
+    });
+  });
+  return positions;
+}
+
 function statusColor(status: NodeStatus) {
   return { ready: "#a6aaa5", in_progress: "#d7874d", needs_input: "#c96766", verified: "#5a927f" }[status];
 }
@@ -186,7 +250,10 @@ const uiCopy = {
     graph: "状态依存网络 / 实时状态",
     processGraph: "认知流程",
     knowledgeGraph: "业务认知图谱",
-    entitySummary: "实体与对象类型",
+    autoLayout: "自动布局",
+    zoomHint: "拖拽节点移动 · 空白处平移 · 滚轮缩放",
+    entitySummary: "认知实体 / 待映射对象",
+    knowledgeNote: "这里的实体是对话抽取的候选对象，不等于正式本体对象类型或对象实例。",
     relationSummary: "条关系",
     unresolved: "待解决依赖",
     assistantTitle: "结构化架构助手",
@@ -226,7 +293,10 @@ const uiCopy = {
     graph: "State dependency network / live state",
     processGraph: "Cognitive process",
     knowledgeGraph: "Business knowledge graph",
-    entitySummary: "Entities and object types",
+    autoLayout: "Auto layout",
+    zoomHint: "Drag nodes · pan empty space · scroll to zoom",
+    entitySummary: "Cognitive entities / mappable objects",
+    knowledgeNote: "These are conversation-extracted candidates, not formal ontology types or instances.",
     relationSummary: "relations",
     unresolved: "Open dependencies",
     assistantTitle: "Structured architecture assistant",
@@ -352,6 +422,77 @@ export default function Home() {
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = uiCopy[locale];
+  const [graphState, setGraphState] = useState<Record<GraphView, GraphViewState>>({
+    process: { positions: defaultProcessPositions, transform: { scale: 1, x: 0, y: 0 } },
+    knowledge: { positions: knowledgeNodePositions, transform: { scale: 1, x: 0, y: 0 } },
+  });
+  const [drag, setDrag] = useState<{ kind: "node" | "pan"; view: GraphView; id?: string; startX: number; startY: number; initial?: Point; initialTransform: GraphTransform } | null>(null);
+
+  function updateGraphState(view: GraphView, patch: Partial<GraphViewState>) {
+    setGraphState((current) => ({ ...current, [view]: { ...current[view], ...patch } }));
+  }
+
+  function handleGraphPointerDown(event: ReactPointerEvent<HTMLDivElement>, view: GraphView) {
+    if ((event.target as HTMLElement).closest("button, .networkNode")) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDrag({ kind: "pan", view, startX: event.clientX, startY: event.clientY, initialTransform: graphState[view].transform });
+  }
+
+  function handleNodePointerDown(event: ReactPointerEvent<HTMLDivElement>, view: GraphView, id: string, position: Point) {
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDrag({ kind: "node", view, id, startX: event.clientX, startY: event.clientY, initial: position, initialTransform: graphState[view].transform });
+  }
+
+  function handleGraphPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!drag) return;
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (drag.kind === "pan") {
+      updateGraphState(drag.view, { transform: { ...drag.initialTransform, x: drag.initialTransform.x + deltaX, y: drag.initialTransform.y + deltaY } });
+      return;
+    }
+    if (!drag.id || !drag.initial) return;
+    const scale = drag.initialTransform.scale;
+    updateGraphState(drag.view, { positions: { ...graphState[drag.view].positions, [drag.id]: { x: drag.initial.x + deltaX / scale, y: drag.initial.y + deltaY / scale } } });
+  }
+
+  function endGraphPointer() {
+    setDrag(null);
+  }
+
+  function handleGraphWheel(event: WheelEvent<HTMLDivElement>, view: GraphView) {
+    event.preventDefault();
+    const current = graphState[view].transform;
+    const nextScale = clamp(current.scale * (event.deltaY > 0 ? 0.9 : 1.1), 0.55, 1.7);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const cursorX = event.clientX - rect.left;
+    const cursorY = event.clientY - rect.top;
+    const ratio = nextScale / current.scale;
+    updateGraphState(view, { transform: { scale: nextScale, x: cursorX - (cursorX - current.x) * ratio, y: cursorY - (cursorY - current.y) * ratio } });
+  }
+
+  function autoLayout(view: GraphView) {
+    updateGraphState(view, {
+      positions: view === "process" ? layoutProcessGraph() : layoutKnowledgeGraph(agentState.entities, agentState.relations),
+      transform: { scale: 1, x: 0, y: 0 },
+    });
+  }
+
+  function resetGraphView(view: GraphView) {
+    updateGraphState(view, { transform: { scale: 1, x: 0, y: 0 } });
+  }
+
+  function graphControls(view: GraphView) {
+    const scale = graphState[view].transform.scale;
+    return <div className={styles.graphControls} aria-label="图谱操作">
+      <button className={styles.graphControlButton} onClick={() => autoLayout(view)} title={copy.autoLayout}><Scan size={14} />{copy.autoLayout}</button>
+      <button className={styles.graphControlIcon} onClick={() => updateGraphState(view, { transform: { ...graphState[view].transform, scale: clamp(scale + 0.1, 0.55, 1.7) } })} title="放大"><ZoomIn size={15} /></button>
+      <button className={styles.graphControlIcon} onClick={() => updateGraphState(view, { transform: { ...graphState[view].transform, scale: clamp(scale - 0.1, 0.55, 1.7) } })} title="缩小"><ZoomOut size={15} /></button>
+      <button className={styles.graphControlIcon} onClick={() => resetGraphView(view)} title="重置视图"><Maximize2 size={14} /></button>
+      <span className={styles.zoomReadout}>{Math.round(scale * 100)}%</span>
+    </div>;
+  }
 
   useEffect(() => {
     const stored = window.localStorage.getItem("syntax-agent-config");
@@ -370,8 +511,9 @@ export default function Home() {
   const visibleJson = useMemo(() => JSON.stringify(agentState, null, 2), [agentState]);
 
   function renderNetworkGraph() {
+    const viewState = graphState.process;
     return (
-      <div className={styles.networkViewport} aria-label="状态依存网络">
+      <div className={styles.networkViewport} aria-label="状态依存网络" onPointerDown={(event) => handleGraphPointerDown(event, "process")} onPointerMove={handleGraphPointerMove} onPointerUp={endGraphPointer} onPointerCancel={endGraphPointer} onWheel={(event) => handleGraphWheel(event, "process")}>
         <div className={styles.stateFlow} aria-label="节点状态流转">
           {statusOrder.map((status, index) => (
             <div className={styles.stateFlowItem} key={status}>
@@ -381,7 +523,8 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <div className={styles.networkStage}>
+        <div className={styles.graphViewportToolbar}>{graphControls("process")}<span className={styles.zoomHint}>{copy.zoomHint}</span></div>
+        <div className={styles.networkStage} style={{ transform: `translate(${viewState.transform.x}px, ${viewState.transform.y}px) scale(${viewState.transform.scale})` }}>
           <svg className={styles.networkEdges} viewBox="0 0 930 540" role="img" aria-label="节点依赖连线">
             <defs>
               <marker id="network-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
@@ -389,8 +532,8 @@ export default function Home() {
               </marker>
             </defs>
             {networkLinks.map(([sourceId, targetId]) => {
-              const source = networkNodePositions[sourceId];
-              const target = networkNodePositions[targetId];
+              const source = viewState.positions[sourceId] ?? networkNodePositions[sourceId];
+              const target = viewState.positions[targetId] ?? networkNodePositions[targetId];
               const targetNode = agentState.nodes.find((node) => node.id === targetId);
               const startX = source.x + networkNodeWidth;
               const startY = source.y + networkNodeHeight / 2;
@@ -403,10 +546,10 @@ export default function Home() {
           </svg>
           <div className={styles.networkNodes}>
             {agentState.nodes.map((node) => {
-              const position = networkNodePositions[node.id];
+              const position = viewState.positions[node.id] ?? networkNodePositions[node.id];
               if (!position) return null;
               return (
-                <div key={node.id} className={`${styles.node} ${styles.networkNode} ${agentState.focus === node.label ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }}>
+                <div key={node.id} className={`${styles.node} ${styles.networkNode} ${agentState.focus === node.label ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }} onPointerDown={(event) => handleNodePointerDown(event, "process", node.id, position)}>
                   <div className={styles.nodeAccent} data-status={node.status} />
                   <div className={styles.nodeMain}>
                     <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{copy.status[node.status]}</span></div>
@@ -427,11 +570,14 @@ export default function Home() {
   }
 
   function renderKnowledgeGraph() {
-    const getPosition = (entityId: string, index: number) => knowledgeNodePositions[entityId] ?? { x: 28 + (index % 3) * 302, y: 28 + Math.floor(index / 3) * 162 };
+    const viewState = graphState.knowledge;
+    const getPosition = (entityId: string, index: number) => viewState.positions[entityId] ?? { x: 28 + (index % 3) * 302, y: 28 + Math.floor(index / 3) * 162 };
     return (
-      <div className={styles.networkViewport} aria-label="业务知识图谱">
+      <div className={styles.networkViewport} aria-label="业务知识图谱" onPointerDown={(event) => handleGraphPointerDown(event, "knowledge")} onPointerMove={handleGraphPointerMove} onPointerUp={endGraphPointer} onPointerCancel={endGraphPointer} onWheel={(event) => handleGraphWheel(event, "knowledge")}>
         <div className={styles.knowledgeIntro}><span>{copy.entitySummary}</span><span>{agentState.entities.length} {locale === "zh" ? "个实体" : "entities"}</span><span>{agentState.relations.length} {copy.relationSummary}</span></div>
-        <div className={`${styles.networkStage} ${styles.knowledgeStage}`}>
+        <div className={styles.knowledgeNote}>{copy.knowledgeNote}</div>
+        <div className={styles.graphViewportToolbar}>{graphControls("knowledge")}<span className={styles.zoomHint}>{copy.zoomHint}</span></div>
+        <div className={`${styles.networkStage} ${styles.knowledgeStage}`} style={{ transform: `translate(${viewState.transform.x}px, ${viewState.transform.y}px) scale(${viewState.transform.scale})` }}>
           <svg className={styles.networkEdges} viewBox="0 0 930 980" role="img" aria-label="实体关系连线">
             <defs>
               <marker id="knowledge-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
@@ -464,7 +610,7 @@ export default function Home() {
             {agentState.entities.map((entity, index) => {
               const position = getPosition(entity.id, index);
               return (
-                <div key={entity.id} className={`${styles.node} ${styles.networkNode} ${styles.knowledgeNode} ${agentState.focus === entity.name ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }}>
+                <div key={entity.id} className={`${styles.node} ${styles.networkNode} ${styles.knowledgeNode} ${agentState.focus === entity.name ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }} onPointerDown={(event) => handleNodePointerDown(event, "knowledge", entity.id, position)}>
                   <div className={styles.nodeAccent} />
                   <div className={styles.nodeMain}>
                     <div className={styles.nodeTopline}><span className={styles.nodeKind}>{entity.type}</span><span className={styles.entityConfidence}>{Math.round(entity.confidence * 100)}%</span></div>
@@ -487,7 +633,15 @@ export default function Home() {
     setSettingsOpen(false);
   }
 
-  function resetWorkspace() { setAgentState(defaultState); setMessages(initialMessages); setDraft(""); }
+  function resetWorkspace() {
+    setAgentState(defaultState);
+    setMessages(initialMessages);
+    setDraft("");
+    setGraphState({
+      process: { positions: defaultProcessPositions, transform: { scale: 1, x: 0, y: 0 } },
+      knowledge: { positions: knowledgeNodePositions, transform: { scale: 1, x: 0, y: 0 } },
+    });
+  }
 
   function exportState() {
     const href = URL.createObjectURL(new Blob([visibleJson], { type: "application/json" }));
