@@ -76,6 +76,26 @@ Use `SKILL.md` as the entrypoint. Copy the repository into the Codex skills dire
 
 Open this repository in Cursor to use the project rule at `.cursor/rules/syntax-skill.mdc`. The rule is agent-requested through its MDC frontmatter and routes Cursor to `SKILL.md`, the shared Agent Design Protocol, and only the domain references relevant to the current task. When copying it to another Cursor project, also copy `SKILL.md` and the `references/` directory so the relative paths and source map remain valid.
 
+## Practical reference: Syntax Agent Workbench
+
+The repository includes a runnable Next.js example at [examples/syntax-agent-workbench](examples/syntax-agent-workbench). It turns the methodology into a small interactive product:
+
+- a JSON-driven dependency/task graph on the left;
+- a structured architecture assistant on the right;
+- a local demo mode that works without an API key;
+- optional OpenAI-compatible `/chat/completions` configuration;
+- JSON copy/export, reset, and unresolved-dependency views.
+
+Run it with:
+
+```bash
+cd examples/syntax-agent-workbench
+pnpm install
+pnpm dev
+```
+
+Configure the API base URL, key, and model in the connection dialog. The key is stored only in browser `localStorage` and is not committed to the repository. Production deployments should follow the provider's CORS requirements and preferably use a server-side proxy or short-lived tokens.
+
 ## Validation
 
 ```bash

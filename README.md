@@ -138,6 +138,26 @@ Skill 由一个主入口、一个共享的 Agent 设计协议，以及八个可�
 - 判断某个 LLM 输出是否需要 grounding、检索或人工确认；
 - 把自然语言请求转化为包含证据要求和确认门槛的类型化任务图。
 
+## 实战参考：Syntax Agent Workbench
+
+仓库包含一个可运行的 Next.js 示例：[examples/syntax-agent-workbench](examples/syntax-agent-workbench)。它把本 Skill 的方法论变成一个最小可交互产品：
+
+- 左侧约三分之二是可展开的依存任务图，底层状态由 JSON 驱动；
+- 右侧是结构化架构助手，可以通过对话更新左侧节点；
+- 没有 API Key 时可以直接使用本地演示模式；
+- 配置 API Key 后，前端调用 OpenAI-compatible 的 `/chat/completions` 接口；
+- 支持复制 JSON、导出当前状态、重置工作区和显示待解决依赖。
+
+启动示例：
+
+```bash
+cd examples/syntax-agent-workbench
+pnpm install
+pnpm dev
+```
+
+打开终端显示的本地地址后，在“连接设置”中填写 API Base URL、API Key 和模型名称。Key 只保存在浏览器 `localStorage`，没有写入代码，也没有放入 Git；实际部署时还应根据服务商要求配置 CORS，生产环境更建议使用服务端代理或短期令牌。
+
 ## 验证
 
 运行：

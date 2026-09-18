@@ -1,0 +1,59 @@
+{
+  "title": "Agent 记忆系统设计",
+  "summary": "把一次自然语言请求拆解为可验证的任务结构。",
+  "focus": "任务图",
+  "nodes": [
+    {
+      "id": "goal",
+      "label": "理解用户目标",
+      "kind": "goal",
+      "status": "in_progress",
+      "detail": "识别目标、边界和成功标准。",
+      "confidence": 0.86,
+      "children": ["entities", "constraints", "plan"]
+    },
+    {
+      "id": "entities",
+      "label": "实体与关系",
+      "kind": "dependency",
+      "status": "ready",
+      "detail": "用户、任务、记忆条目和证据来源。",
+      "confidence": 0.72
+    },
+    {
+      "id": "constraints",
+      "label": "约束与不确定性",
+      "kind": "constraint",
+      "status": "needs_input",
+      "detail": "仍需确认：长期记忆的保留边界。",
+      "confidence": 0.48
+    },
+    {
+      "id": "plan",
+      "label": "执行计划",
+      "kind": "plan",
+      "status": "ready",
+      "detail": "观察 → 结构化 → 记忆 → 验证。",
+      "confidence": 0.79,
+      "children": ["memory", "verification"]
+    },
+    {
+      "id": "memory",
+      "label": "可恢复记忆",
+      "kind": "memory",
+      "status": "ready",
+      "detail": "摘要保留来源、时间、置信度和重建路径。",
+      "confidence": 0.68
+    },
+    {
+      "id": "verification",
+      "label": "验证与裁决",
+      "kind": "verification",
+      "status": "verified",
+      "detail": "模型提出候选，规则和证据决定是否接受。",
+      "confidence": 0.91
+    }
+  ],
+  "unresolved": ["长期记忆保留多久？", "哪些动作需要人工确认？"],
+  "updatedAt": "刚刚"
+}
