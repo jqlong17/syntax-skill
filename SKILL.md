@@ -1,6 +1,6 @@
 ---
 name: syntax-skill
-description: "Apply the cognitive-syntax methodology of Syntax: A Cognitive Approach to designing AI systems, LLM applications, memory, dialogue, planning, tool use, uncertainty handling, and agent evaluation. Use when a design needs an explicit bridge between linguistic form, meaning, structure, context, memory, and verification; do not use this as an EPUB translation workflow."
+description: "使用《句法：认知取向》的认知句法方法论设计 AI、LLM 应用与 Agent 系统，覆盖长期记忆、对话管理、任务拆解、规划、工具调用、不确定性处理和多维评估。当系统需要明确连接语言形式、意义、结构、上下文、记忆与验证时使用；不要将本 Skill 用作电子书翻译流程。"
 ---
 
 # Syntax Methodology
