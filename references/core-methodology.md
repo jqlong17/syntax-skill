@@ -56,6 +56,19 @@ verification before completion
 
 This is an engineering application of the book's ideas, not a claim that the book presents a modern Agent software stack in this exact form.
 
+## Broader architecture implications
+
+The same framework supports several conclusions that are useful beyond the eight domain cards:
+
+- Fluency is not a sufficient proxy for intelligence or grounded understanding.
+- Explicit structure can matter more than adding model capacity when the failure is missing state.
+- Memory quality is measured by useful dependency retention and recoverability, not by raw history length.
+- Long context increases the opportunity for interference; locality and rebinding are architectural features.
+- Input, retrieval, generation, tools, and execution form a chain of noisy communication channels.
+- Reliability includes safe stopping, diagnosis, repair, and replanning, not only first-pass success.
+- A convincing demonstration is weaker evidence than a falsifiable hypothesis tested across failure modes.
+- Interfaces should expose enough task state, evidence, and pending decisions to support joint human-Agent reasoning.
+
 ## Source anchors
 
 - Form, meaning, and LLM limits: Ch. 9, sec. 9.2, pp. 251-255, `OEBPS/xhtml/chapter_9.xhtml#hsec9-2`; Ch. 11, pp. 297-300, `OEBPS/xhtml/chapter_11.xhtml#ch11` near `#pg_299`.

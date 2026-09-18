@@ -29,6 +29,12 @@ The book's central insight can be compressed into one sentence: **language form 
 
 The project turns that insight into eight propositions: form is not meaning; structure carries the work; communication is noisy; memory is resource-bounded; critical dependencies should stay local; planning is not verbalization; quality is graded and multidimensional; and candidate generation is not final arbitration. The full abstraction is documented in [references/core-methodology.md](references/core-methodology.md).
 
+## Broader value for Agent design
+
+Beyond the eight domains, the book offers several durable architecture lessons: fluency is not proof of intelligence; explicit structure often matters more than model size; useful memory preserves dependencies and recovery paths rather than every past token; long context is not the same as reliable understanding; an Agent is a noisy communication system; reliability means graceful stopping, repair, and replanning; architecture should be tested with falsifiable hypotheses rather than demos alone; and the user interface should help maintain structured state.
+
+In compressed form: **the hard problem is not generating language, but constructing, maintaining, verifying, and executing meaning under limited resources, noise, and uncertainty.**
+
 ## Estimated token consumption
 
 The project included first-pass translation, chapter-by-chapter bilingual checks, EPUB structure repair, whole-book quality review, and final packaging validation. Based on the actual EPUB text volume and workflow, the estimated total is:
