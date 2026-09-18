@@ -1,5 +1,7 @@
 # syntax-skill
 
+> 中文版为默认入口。English version: [README.en.md](README.en.md)
+
 `syntax-skill` is a reusable Codex skill that turns the central distinctions in Edward A. F. Gibson's *Syntax: A Cognitive Approach* into a practical theory layer for AI and agent design.
 
 It is intended for systems where language is only one part of the problem: memory, dialogue, task decomposition, planning, tool use, verification, uncertainty, and multi-agent coordination. The skill helps an implementation team ask a prior question before adding more prompting: what structure, state, evidence, and control loop must exist outside the language model?
@@ -43,6 +45,15 @@ Every domain reference includes a source locator with:
 - retrieval terms for reopening the surrounding context.
 
 The canonical citation map is [references/source-map.md](references/source-map.md). It is based on the original English EPUB, not on a summary or a retyped excerpt. The repository intentionally does not copy the full book.
+
+## 书籍资源与引用
+
+本仓库提供可追溯的书籍资源入口，但不把整本中文译本直接公开打包进仓库：
+
+- 英文原书的官方开放获取入口、出版社信息和许可证见 [references/source-assets.md](references/source-assets.md)。
+- 中文译本的本地文件名、SHA-256、章节锚点映射和私有资源接入方式也记录在该文件中。
+- 中文译本属于原书的翻译改编版本，公开再分发需要额外的授权；因此 GitHub 仓库只保存索引和引用协议，不保存整本译本。
+- 仓库中的引用始终指向原始 EPUB XHTML 文件、章节锚点和页码锚点，便于 Agent 回读上下文。
 
 ## Installation
 

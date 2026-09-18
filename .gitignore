@@ -1,0 +1,5 @@
+# Local source books and translated derivatives stay outside the public repo.
+*.epub
+*.pdf
+local-assets/
+private-assets/
