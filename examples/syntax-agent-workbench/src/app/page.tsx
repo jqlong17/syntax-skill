@@ -47,6 +47,7 @@ type ChatMessage = {
   role: "assistant" | "user";
   content: string;
   timestamp: string;
+  id?: string;
 };
 
 type ApiConfig = {
@@ -97,7 +98,7 @@ const uiCopy = {
     sendHint: "Enter 发送 · Shift + Enter 换行",
     send: "发送",
     configure: "配置模型连接",
-    getKey: "获取 API Key",
+    recommendPurchase: "推荐购买",
     connection: "连接",
     connectionTitle: "模型连接设置",
     connectionIntro: "支持 OpenAI-compatible 的 /chat/completions 接口。不要把生产密钥提交到代码仓库。",
@@ -133,7 +134,7 @@ const uiCopy = {
     sendHint: "Enter to send · Shift + Enter for a new line",
     send: "Send",
     configure: "Configure model",
-    getKey: "Get API key",
+    recommendPurchase: "Recommended purchase",
     connection: "Connection",
     connectionTitle: "Model connection",
     connectionIntro: "Supports an OpenAI-compatible /chat/completions endpoint. Never commit a production key to the repository.",
@@ -304,6 +305,8 @@ export default function Home() {
     const text = draft.trim();
     if (!text || isSending) return;
     const timestamp = nowLabel();
+    const assistantId = `assistant-${Date.now()}`;
+    let assistantInserted = false;
     setMessages((current) => [...current, { role: "user", content: text, timestamp }]);
     setDraft("");
     setIsSending(true);
@@ -324,7 +327,7 @@ export default function Home() {
         body: JSON.stringify({
           model: config.model.trim() || "gpt-5.5",
           temperature: 0.2,
-          stream: false,
+          stream: true,
           messages: [
             { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次都必须只返回一个有效 JSON 对象，不要 Markdown、不要代码围栏、不要解释性前后缀。格式是 {reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>}}。即使用户只是打招呼，也返回 patch:{}。只能更新当前结构中已有的节点 id，不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
             ...messages.slice(-8).map((message) => ({ role: message.role, content: message.content })),
@@ -335,18 +338,65 @@ export default function Home() {
       });
       try {
         if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
-        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-        const content = payload.choices?.[0]?.message?.content;
+        let content = "";
+        const contentType = response.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+          content = payload.choices?.[0]?.message?.content ?? "";
+        } else if (response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          const upsertPreview = () => {
+            assistantInserted = true;
+            setMessages((current) => {
+              const preview = { id: assistantId, role: "assistant" as const, content: "模型已开始响应，正在整理结构…", timestamp: nowLabel() };
+              const exists = current.some((message) => message.id === assistantId);
+              return exists ? current.map((message) => message.id === assistantId ? preview : message) : [...current, preview];
+            });
+          };
+          const consumeLine = (line: string) => {
+            if (!line.startsWith("data:")) return;
+            const data = line.slice(5).trim();
+            if (!data || data === "[DONE]") return;
+            try {
+              const chunk = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+              const delta = chunk.choices?.[0]?.delta?.content;
+              if (delta) {
+                content += delta;
+                if (!assistantInserted) upsertPreview();
+              }
+            } catch {
+              // Ignore an incomplete SSE frame; the next read completes it.
+            }
+          };
+          while (true) {
+            const { done, value } = await reader.read();
+            buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() ?? "";
+            lines.forEach(consumeLine);
+            if (done) break;
+          }
+          if (buffer) consumeLine(buffer);
+        }
         if (!content) throw new Error("API 没有返回 assistant 内容。");
         const parsed = parseModelResponse(content, agentState, text);
         setAgentState(parsed.nextState);
-        setMessages((current) => [...current, { role: "assistant", content: parsed.reply, timestamp: nowLabel() }]);
+        setMessages((current) => {
+          const finalMessage = { id: assistantId, role: "assistant" as const, content: parsed.reply, timestamp: nowLabel() };
+          const exists = current.some((message) => message.id === assistantId);
+          return exists ? current.map((message) => message.id === assistantId ? finalMessage : message) : [...current, finalMessage];
+        });
       } finally {
         window.clearTimeout(timeout);
       }
     } catch (error) {
       const message = error instanceof DOMException && error.name === "AbortError" ? "请求超过 60 秒仍未返回。请检查中转服务、模型名称或网络连接。" : error instanceof Error ? error.message : "未知错误";
-      setMessages((current) => [...current, { role: "assistant", content: `调用失败：${message} 你也可以先清空 API Key 使用本地演示模式。`, timestamp: nowLabel() }]);
+      setMessages((current) => {
+        const errorMessage = { id: assistantId, role: "assistant" as const, content: `调用失败：${message} 你也可以先清空 API Key 使用本地演示模式。`, timestamp: nowLabel() };
+        return assistantInserted ? current.map((item) => item.id === assistantId ? errorMessage : item) : [...current, errorMessage];
+      });
     } finally { setIsSending(false); }
   }
 
@@ -377,7 +427,7 @@ export default function Home() {
           <div className={styles.chatHeader}><div className={styles.assistantIdentity}><div className={styles.assistantAvatar}><Bot size={18} /></div><div><div className={styles.panelKicker}>02 / {copy.assistant}</div><h2>{copy.assistantTitle}</h2></div></div><span className={styles.secureLabel}><ShieldCheck size={14} />{copy.localFirst}</span></div>
           <div className={styles.chatMessages}><div className={styles.systemNote}><KeyRound size={14} />{copy.keyNote}</div>{messages.map((message, index) => <div key={`${message.timestamp}-${index}`} className={`${styles.messageRow} ${message.role === "user" ? styles.userRow : ""}`}><div className={styles.messageMeta}><span>{message.role === "user" ? (locale === "zh" ? "你" : "You") : (locale === "zh" ? "助手" : "Assistant")}</span><time>{message.timestamp}</time></div><div className={`${styles.messageBubble} ${message.role === "user" ? styles.userBubble : ""}`}>{message.content}</div></div>)}{isSending ? <div className={styles.typing}><span /><span /><span />{locale === "zh" ? "正在更新结构…" : "Updating structure…"}</div> : null}</div>
           <form className={styles.composer} onSubmit={sendMessage}><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={copy.placeholder} rows={3} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} /><div className={styles.composerFooter}><span>{copy.sendHint}</span><button className={styles.sendButton} disabled={!draft.trim() || isSending} title={copy.send}><Send size={16} />{copy.send}</button></div></form>
-          <div className={styles.chatFooter}><button className={styles.footerLink} onClick={() => setSettingsOpen(true)}><Settings2 size={14} />{copy.configure}</button><a href="https://cdk.aixhan.com/?aff=af_1bb942815b09" target="_blank" rel="noreferrer">{copy.getKey} <Play size={12} /></a></div>
+          <div className={styles.chatFooter}><button className={styles.footerLink} onClick={() => setSettingsOpen(true)}><Settings2 size={14} />{copy.configure}</button><a className={styles.recommendedLink} href="https://cdk.aixhan.com/?aff=af_1bb942815b09" target="_blank" rel="noreferrer">{copy.recommendPurchase} <Play size={12} /></a></div>
         </aside>
       </section>
 

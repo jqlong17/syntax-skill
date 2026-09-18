@@ -83,6 +83,7 @@
 .composerFooter { justify-content: space-between; gap: 12px; margin-top: 9px; color: #777; font-size: 10px; }
 .chatFooter { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 20px 18px; color: #777; font-size: 11px; }
 .chatFooter a, .footerLink { display: inline-flex; align-items: center; gap: 5px; color: #111; font: inherit; }
+.recommendedLink { font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 
 .primaryButton, .secondaryButton, .iconTextButton, .sendButton, .iconButton, .footerLink { border: 0; cursor: pointer; }
 .primaryButton, .secondaryButton, .iconTextButton, .sendButton { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 0 11px; border-radius: 8px; font-size: 12px; font-weight: 750; }
