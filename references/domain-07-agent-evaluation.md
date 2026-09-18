@@ -8,6 +8,15 @@ Chapter 2 distinguishes acceptability from grammaticality and shows that judgmen
 
 Evaluate an agent on separate dimensions: goal understanding, argument completeness, grounding, tool selection, execution correctness, verification, uncertainty calibration, policy compliance, and recoverability.
 
+## Agent card
+
+- **Trigger**: a single success rate hides fluent errors, unsafe guesses, or poor recovery.
+- **State fields**: task-level scores, stage-level failure labels, confidence, evidence, repair outcome.
+- **Invariant**: every score names the capability being measured and the failure stage it can diagnose.
+- **Decision policy**: gate deployment on the dimensions that matter for the risk profile; never average away a critical failure.
+- **Failure recovery**: convert failures into targeted regression cases and retest the affected stage.
+- **Minimum test**: compare a grounded but awkward answer with a fluent but false answer across correctness, evidence, and calibration.
+
 ## Design rules
 
 - Keep correctness, usefulness, confidence, and acceptability as distinct metrics.

@@ -7,7 +7,19 @@ import sys
 
 root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[1]
 refs = sorted((root / "references").glob("domain-*.md"))
-required = ["Ch.", "pp.", "OEBPS/xhtml/chapter_", "#pg_", "Retrieve"]
+required = [
+    "Ch.",
+    "pp.",
+    "OEBPS/xhtml/chapter_",
+    "#pg_",
+    "Retrieve",
+    "## Agent card",
+    "**Trigger**",
+    "**Invariant**",
+    "**Decision policy**",
+    "**Failure recovery**",
+    "**Minimum test**",
+]
 errors = []
 for path in refs:
     text = path.read_text(encoding="utf-8")

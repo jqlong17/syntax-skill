@@ -20,12 +20,14 @@ Use this skill as a theory-to-design layer for AI and agent systems. It is based
 
 ## How to use the references
 
-Read only the domain reference that matches the current design problem, then read `references/source-map.md` for the full citation scheme and neighboring context. Each domain file contains:
+Start with `references/agent-design-protocol.md` when designing or reviewing an architecture. Then read only the domain references that match the current design problem, followed by `references/source-map.md` for the full citation scheme and neighboring context. Each domain file contains:
 
 1. the book's source-grounded claim;
 2. the engineering interpretation, clearly marked as an application;
 3. concrete design rules and a review checklist;
 4. exact EPUB file, section anchor, page range, and retrieval terms.
+
+Each domain should be treated as an Agent design card. Extract its trigger, state fields, invariants, decision policy, failure modes, and verification questions before writing code or prompts.
 
 ## Domain routing
 
@@ -38,9 +40,22 @@ Read only the domain reference that matches the current design problem, then rea
 - Acceptability as multidimensional agent evaluation: `references/domain-07-agent-evaluation.md`
 - LLMs as candidate generators rather than final arbiters: `references/domain-08-llm-as-candidate-generator.md`
 
+## Recommended composition order
+
+For a new Agent architecture, use the domains in this order unless the task clearly requires another route:
+
+1. Domain 1 to separate linguistic form, interpretation, and grounded state.
+2. Domain 2 to build the typed dependency/task graph.
+3. Domain 3 to classify noise, ambiguity, and confirmation thresholds.
+4. Domains 4 and 5 to design memory, locality, and active-state refresh.
+5. Domain 6 to define planning, execution, verification, and replanning.
+6. Domains 7 and 8 to evaluate the system and constrain model authority.
+
+The composition is a design heuristic derived from the book; it is not a claim that the book presents this exact software pipeline.
+
 ## Required output pattern
 
-When using this skill to propose or review a system, produce:
+When using this skill to propose or review a system, produce the artifacts specified in `references/agent-design-protocol.md`, including:
 
 1. a structured statement of the user's goal and the unresolved ambiguities;
 2. a dependency/task graph with explicit entities, parameters, constraints, and state transitions;
@@ -48,7 +63,8 @@ When using this skill to propose or review a system, produce:
 4. the memory layers and provenance/recovery strategy;
 5. the separation between candidate generation, planning, execution, verification, and final response;
 6. evaluation dimensions and failure-recovery paths;
-7. citations to the source map, including chapter, section, page, XHTML file, and anchor.
+7. citations to the source map, including chapter, section, page, XHTML file, and anchor;
+8. explicit next actions, open decisions, and the smallest test that could falsify the design.
 
 Do not present an engineering extrapolation as if it were a direct quotation from the book. Do not copy the book wholesale into a prompt. Use short paraphrases, retrieval terms, and precise locations so a later model can reopen the original context.
 

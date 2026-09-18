@@ -17,6 +17,8 @@ The skill contains one entrypoint and eight focused reference skills:
 7. **Multidimensional evaluation**: measure understanding, grounding, execution, verification, calibration, and repairability separately.
 8. **Candidate generation vs. arbitration**: let the LLM propose; let tools, policies, schemas, validators, and humans decide.
 
+The shared [agent design protocol](references/agent-design-protocol.md) makes these domains composable. It defines a common state model, a domain-card contract, a standard observe-to-verify loop, risk-sensitive decision gates, architecture deliverables, and falsification tests.
+
 ## Why this matters for AI and agents
 
 The core design risk in language-first systems is confusing a well-formed string with a solved task. This skill provides a compact vocabulary for avoiding that confusion:
@@ -54,6 +56,7 @@ Copy the `syntax-skill` directory into the Codex skills directory, or invoke it 
 - Specify a tool-use and verification loop.
 - Create evaluation dimensions for a multi-agent workflow.
 - Analyze when an LLM output needs grounding, retrieval, or human approval.
+- Turn a natural-language request into a typed task graph with explicit evidence and confirmation gates.
 
 ## Validation
 

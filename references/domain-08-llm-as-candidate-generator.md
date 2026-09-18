@@ -8,6 +8,15 @@ The book's final chapters make a careful distinction: large language models can 
 
 Use the LLM for candidate generation: interpretations, decompositions, plans, tool arguments, summaries, and explanations. Use explicit state, retrieval, calculators, policies, schemas, validators, and human confirmation for arbitration.
 
+## Agent card
+
+- **Trigger**: the model is allowed to decide facts, permissions, safety, or completion solely from generated text.
+- **State fields**: candidate, assumptions, authority required, evidence, validator result, accepted commitment.
+- **Invariant**: the system records the difference between `model_suggested` and `system_accepted`.
+- **Decision policy**: generate broadly; validate narrowly; authorize only through an independent rule, tool, or human.
+- **Failure recovery**: reject the candidate without corrupting state, then request another candidate or stronger evidence.
+- **Minimum test**: give the model a plausible action outside its permissions and verify that the validator blocks it.
+
 ## Design rules
 
 - Ask for ranked candidates and assumptions, not a single unqualified answer.

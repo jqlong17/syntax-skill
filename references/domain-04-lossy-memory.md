@@ -8,6 +8,15 @@ The book links complexity, memory overload, nested dependencies, and forgetting.
 
 Compression is acceptable only when the system retains enough metadata to reconstruct the decision context. A summary without provenance is not memory; it is an untraceable rewrite.
 
+## Agent card
+
+- **Trigger**: context windows, summaries, retrieval compression, or long-running tasks risk losing dependencies.
+- **State fields**: summary, source pointers, timestamp, confidence, scope, invalidation conditions, rehydration query.
+- **Invariant**: every durable memory item has a recovery path to evidence and a freshness rule.
+- **Decision policy**: compress low-value wording; preserve decisions, constraints, provenance, unresolved questions, and negative evidence.
+- **Failure recovery**: rehydrate from source traces before acting; invalidate stale or contradicted memories.
+- **Minimum test**: hide the original transcript and require the system to recover the source behind a high-stakes summary claim.
+
 ## Design rules
 
 - Separate working memory, task memory, semantic memory, episodic memory, and evidence memory.

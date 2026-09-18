@@ -8,6 +8,15 @@ Chapter 4 studies dependency locality: longer or more interference-prone depende
 
 Conversation state has a reference distance too. If an action depends on a fact buried many turns away, the system is more likely to bind the wrong entity, parameter, or version. Keep active dependencies local through explicit state blocks and stage summaries.
 
+## Agent card
+
+- **Trigger**: long conversations, repeated names, multiple tasks, or tools that consume distant context.
+- **State fields**: active goal, stable entity IDs, current parameters, stage summary, next action, dependency links.
+- **Invariant**: the next action can resolve its critical references from the local active-state block.
+- **Decision policy**: refresh or rebind state when a dependency crosses a stage boundary or interference threshold.
+- **Failure recovery**: pause execution, rebuild the active state from provenance, then revalidate the action arguments.
+- **Minimum test**: introduce two similarly named entities in separate tasks and check that the final tool call binds the correct one.
+
 ## Design rules
 
 - Put the current goal, active entities, constraints, and next action in a compact state block.

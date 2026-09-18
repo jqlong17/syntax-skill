@@ -8,6 +8,15 @@ Chapter 3 describes grammar as a compressed system for organizing allowable comb
 
 Natural-language generation should not be the sole planner. Use a staged pipeline: interpret, build a task graph, check constraints, plan, execute tools, verify results, update state, and then verbalize.
 
+## Agent card
+
+- **Trigger**: the model writes a persuasive plan directly into the final response or tool call.
+- **State fields**: task graph, plan steps, preconditions, postconditions, tool trace, verification status.
+- **Invariant**: execution status is determined by tool results and checks, not by narrative fluency.
+- **Decision policy**: plan before acting; gate each irreversible step; replan when evidence invalidates a precondition.
+- **Failure recovery**: mark the failed step, preserve completed work, and generate a bounded repair plan.
+- **Minimum test**: fail a tool call after step two and verify that the system does not report the whole task as complete.
+
 ## Design rules
 
 - Make the plan a typed intermediate representation, not a paragraph.

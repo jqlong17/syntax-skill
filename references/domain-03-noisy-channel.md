@@ -8,6 +8,15 @@ Chapter 10 treats communication as inference through a noisy channel. A comprehe
 
 Treat every input and output boundary as potentially noisy: speech recognition, OCR, user wording, retrieval, model generation, tool results, and execution. Infer when the cost of being wrong is low; confirm when risk or irreversibility is high.
 
+## Agent card
+
+- **Trigger**: input comes from ASR/OCR/retrieval/tools, or an inference depends heavily on a prior.
+- **State fields**: observed signal, channel, candidate interpretations, priors, likelihood/evidence, risk level.
+- **Invariant**: the system can distinguish observed text from inferred intent and from accepted state.
+- **Decision policy**: infer only under a low-risk threshold; ask or verify for high-risk or irreversible steps.
+- **Failure recovery**: preserve the raw signal, show the competing interpretations, and replay inference after corrected evidence arrives.
+- **Minimum test**: inject a plausible typo and a rare but correct interpretation; verify that priors do not erase the signal.
+
 ## Design rules
 
 - Maintain separate fields for observed text, candidate interpretation, prior assumptions, and evidence.

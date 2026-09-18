@@ -8,6 +8,15 @@ The book distinguishes the form of a language from the meanings and thoughts com
 
 Never treat a fluent answer as proof that the system has a grounded world model. Keep explicit state for entities, facts, goals, permissions, time, and uncertainty. The LLM may map between forms, but the system needs other mechanisms to establish referents and verify world claims.
 
+## Agent card
+
+- **Trigger**: fluent output is being treated as proof of understanding, truth, or completion.
+- **State fields**: `utterance`, `interpretation`, `world_state`, `commitment`, `provenance`.
+- **Invariant**: no linguistic output becomes an external fact or commitment without grounding.
+- **Decision policy**: paraphrase freely; ground facts and actions; confirm when the referent or consequence is material.
+- **Failure recovery**: reopen the source or ask for the missing referent; do not polish an ungrounded claim.
+- **Minimum test**: present identical wording under two different world states and check that the system asks for or retrieves the difference.
+
 ## Design rules
 
 - Separate `utterance`, `interpretation`, `world_state`, and `commitment` objects.

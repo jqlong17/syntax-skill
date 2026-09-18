@@ -8,6 +8,15 @@ Chapter 3 models a sentence as a dependency structure in which heads determine b
 
 Represent a request as a graph of dependencies: a goal has actors, objects, parameters, constraints, prerequisites, tools, and expected evidence. This graph should be the contract between language understanding and execution.
 
+## Agent card
+
+- **Trigger**: a request contains multiple entities, constraints, steps, or ambiguous attachments.
+- **State fields**: typed nodes, typed edges, unresolved dependencies, required arguments, evidence requirements.
+- **Invariant**: every executable action has its required arguments and a traceable parent goal.
+- **Decision policy**: branch when attachments are ambiguous; block when a required dependency is missing; compile only complete subgraphs.
+- **Failure recovery**: mark the unresolved edge, ask one targeted question, and preserve existing candidates.
+- **Minimum test**: remove one argument, duplicate one entity, and introduce one conflicting constraint; verify that the graph exposes each defect.
+
 ## Design rules
 
 - Use typed nodes for entities, actions, constraints, resources, and outputs.
