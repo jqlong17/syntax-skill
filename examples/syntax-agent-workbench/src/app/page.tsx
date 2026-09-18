@@ -23,6 +23,7 @@ import styles from "./page.module.css";
 import defaultStateJson from "./agent-state.json";
 
 type NodeStatus = "ready" | "in_progress" | "needs_input" | "verified";
+type GraphView = "process" | "knowledge";
 
 type AgentNode = {
   id: string;
@@ -34,11 +35,29 @@ type AgentNode = {
   children?: string[];
 };
 
+type KnowledgeEntity = {
+  id: string;
+  name: string;
+  type: string;
+  detail: string;
+  confidence: number;
+};
+
+type KnowledgeRelation = {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+  confidence: number;
+};
+
 type AgentState = {
   title: string;
   summary: string;
   focus: string;
   nodes: AgentNode[];
+  entities: KnowledgeEntity[];
+  relations: KnowledgeRelation[];
   unresolved: string[];
   updatedAt: string;
 };
@@ -94,9 +113,52 @@ const networkLinks = [
 const networkNodeWidth = 246;
 const networkNodeHeight = 118;
 const statusOrder: NodeStatus[] = ["ready", "in_progress", "needs_input", "verified"];
+const knowledgeNodePositions: Record<string, { x: number; y: number }> = {
+  user: { x: 28, y: 28 },
+  agent: { x: 330, y: 28 },
+  task: { x: 330, y: 190 },
+  memory_record: { x: 638, y: 28 },
+  evidence: { x: 638, y: 190 },
+  policy: { x: 330, y: 352 },
+  tool: { x: 638, y: 352 },
+};
+
+const knowledgeNodeWidth = 246;
+const knowledgeNodeHeight = 118;
 
 function statusColor(status: NodeStatus) {
   return { ready: "#a6aaa5", in_progress: "#d7874d", needs_input: "#c96766", verified: "#5a927f" }[status];
+}
+
+function upsertKnowledgeGraph(state: AgentState, entityUpdates: Partial<KnowledgeEntity>[], relationUpdates: Partial<KnowledgeRelation>[]): AgentState {
+  const entityMap = new Map(state.entities.map((entity) => [entity.id, entity]));
+  entityUpdates.forEach((update) => {
+    if (!update.id) return;
+    const current = entityMap.get(update.id);
+    if (!current && (!update.name || !update.type)) return;
+    entityMap.set(update.id, {
+      id: update.id,
+      name: update.name ?? current?.name ?? update.id,
+      type: update.type ?? current?.type ?? "未分类",
+      detail: update.detail ?? current?.detail ?? "",
+      confidence: typeof update.confidence === "number" ? Math.max(0, Math.min(1, update.confidence)) : current?.confidence ?? 0.5,
+    });
+  });
+
+  const relationMap = new Map(state.relations.map((relation) => [relation.id, relation]));
+  relationUpdates.forEach((update) => {
+    if (!update.id || !update.source || !update.target || !update.type) return;
+    if (!entityMap.has(update.source) || !entityMap.has(update.target)) return;
+    const current = relationMap.get(update.id);
+    relationMap.set(update.id, {
+      id: update.id,
+      source: update.source,
+      target: update.target,
+      type: update.type,
+      confidence: typeof update.confidence === "number" ? Math.max(0, Math.min(1, update.confidence)) : current?.confidence ?? 0.5,
+    });
+  });
+  return { ...state, entities: [...entityMap.values()], relations: [...relationMap.values()], updatedAt: "刚刚" };
 }
 const uiCopy = {
   zh: {
@@ -113,6 +175,10 @@ const uiCopy = {
     currentFocus: "当前焦点",
     updated: "更新于",
     graph: "状态依存网络 / 实时状态",
+    processGraph: "认知流程",
+    knowledgeGraph: "业务认知图谱",
+    entitySummary: "实体与对象类型",
+    relationSummary: "条关系",
     unresolved: "待解决依赖",
     assistantTitle: "结构化架构助手",
     localFirst: "本地优先",
@@ -149,6 +215,10 @@ const uiCopy = {
     currentFocus: "Focus",
     updated: "Updated",
     graph: "State dependency network / live state",
+    processGraph: "Cognitive process",
+    knowledgeGraph: "Business knowledge graph",
+    entitySummary: "Entities and object types",
+    relationSummary: "relations",
     unresolved: "Open dependencies",
     assistantTitle: "Structured architecture assistant",
     localFirst: "Local-first",
@@ -186,6 +256,8 @@ type ModelPatch = {
   focus?: string;
   summary?: string;
   nodes?: Partial<AgentNode>[];
+  entities?: Partial<KnowledgeEntity>[];
+  relations?: Partial<KnowledgeRelation>[];
 };
 
 type ModelResponse = {
@@ -243,7 +315,8 @@ function parseModelResponse(content: string, state: AgentState, userText: string
       ...node,
       confidence: typeof node.confidence === "number" ? Math.max(0, Math.min(1, node.confidence)) : undefined,
     }));
-    return { reply: parsed.reply ?? "我完成了结构化分析，但没有返回额外说明。", nextState: updateNodes({ ...state, summary: patch.summary ?? state.summary }, safeNodes, patch.focus), parsed: true };
+    const nextState = updateNodes({ ...state, summary: patch.summary ?? state.summary }, safeNodes, patch.focus);
+    return { reply: parsed.reply ?? "我完成了结构化分析，但没有返回额外说明。", nextState: upsertKnowledgeGraph(nextState, patch.entities ?? [], patch.relations ?? []), parsed: true };
   }
 
   const inferred = inferLocalPatch(userText, state);
@@ -262,6 +335,7 @@ export default function Home() {
   const [config, setConfig] = useState<ApiConfig>(defaultConfig);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
+  const [graphView, setGraphView] = useState<GraphView>("process");
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const copy = uiCopy[locale];
@@ -339,6 +413,61 @@ export default function Home() {
     );
   }
 
+  function renderKnowledgeGraph() {
+    const getPosition = (entityId: string, index: number) => knowledgeNodePositions[entityId] ?? { x: 28 + (index % 3) * 302, y: 28 + Math.floor(index / 3) * 162 };
+    return (
+      <div className={styles.networkViewport} aria-label="业务知识图谱">
+        <div className={styles.knowledgeIntro}><span>{copy.entitySummary}</span><span>{agentState.entities.length} {locale === "zh" ? "个实体" : "entities"}</span><span>{agentState.relations.length} {copy.relationSummary}</span></div>
+        <div className={styles.networkStage}>
+          <svg className={styles.networkEdges} viewBox="0 0 930 540" role="img" aria-label="实体关系连线">
+            <defs>
+              <marker id="knowledge-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L8,4 L0,8 z" fill="#8d938e" />
+              </marker>
+            </defs>
+            {agentState.relations.map((relation) => {
+              const sourceIndex = agentState.entities.findIndex((entity) => entity.id === relation.source);
+              const targetIndex = agentState.entities.findIndex((entity) => entity.id === relation.target);
+              if (sourceIndex < 0 || targetIndex < 0) return null;
+              const source = getPosition(relation.source, sourceIndex);
+              const target = getPosition(relation.target, targetIndex);
+              const startX = source.x + knowledgeNodeWidth;
+              const startY = source.y + knowledgeNodeHeight / 2;
+              const endX = target.x;
+              const endY = target.y + knowledgeNodeHeight / 2;
+              const bend = Math.max(38, Math.abs(endX - startX) * 0.42);
+              const isFocused = agentState.focus === agentState.entities[sourceIndex]?.name || agentState.focus === agentState.entities[targetIndex]?.name;
+              const labelX = (startX + endX) / 2;
+              const labelY = (startY + endY) / 2 - 5;
+              return (
+                <g key={relation.id}>
+                  <path className={styles.knowledgeEdge} style={{ opacity: isFocused ? 1 : 0.72, strokeWidth: isFocused ? 2.2 : 1.4 }} d={`M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`} markerEnd="url(#knowledge-arrow)" />
+                  <text className={styles.relationLabel} x={labelX} y={labelY}>{relation.type}</text>
+                </g>
+              );
+            })}
+          </svg>
+          <div className={styles.networkNodes}>
+            {agentState.entities.map((entity, index) => {
+              const position = getPosition(entity.id, index);
+              return (
+                <div key={entity.id} className={`${styles.node} ${styles.networkNode} ${styles.knowledgeNode} ${agentState.focus === entity.name ? styles.nodeFocused : ""}`} style={{ left: position.x, top: position.y }}>
+                  <div className={styles.nodeAccent} />
+                  <div className={styles.nodeMain}>
+                    <div className={styles.nodeTopline}><span className={styles.nodeKind}>{entity.type}</span><span className={styles.entityConfidence}>{Math.round(entity.confidence * 100)}%</span></div>
+                    <div className={styles.nodeTitleRow}><strong>{entity.name}</strong></div>
+                    <p>{entity.detail}</p>
+                    <div className={styles.nodeMeta}><span>entity</span><span>id:{entity.id}</span></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function saveConfig(nextConfig: ApiConfig) {
     setConfig(nextConfig);
     window.localStorage.setItem("syntax-agent-config", JSON.stringify(nextConfig));
@@ -391,7 +520,7 @@ export default function Home() {
           temperature: 0.2,
           stream: true,
           messages: [
-            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次都必须只返回一个有效 JSON 对象，不要 Markdown、不要代码围栏、不要解释性前后缀。格式是 {reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>}}。即使用户只是打招呼，也返回 patch:{}。只能更新当前结构中已有的节点 id，不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
+            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次都必须只返回一个有效 JSON 对象，不要 Markdown、不要代码围栏、不要解释性前后缀。格式是 {reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>,entities?:Array<{id:string,name:string,type:string,detail?:string,confidence?:number}>,relations?:Array<{id:string,source:string,target:string,type:string,confidence?:number}>}}。即使用户只是打招呼，也返回 patch:{}。流程节点只能更新已有节点 id；业务图谱可以新增或更新与当前请求直接相关的实体和关系，但关系的 source 与 target 必须存在于当前或本次新增的实体中。不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
             ...messages.slice(-8).map((message) => ({ role: message.role, content: message.content })),
             { role: "user", content: text },
             { role: "user", content: `当前结构 JSON：${visibleJson}` },
@@ -480,7 +609,11 @@ export default function Home() {
           <div className={styles.panelHeader}><div><div className={styles.panelKicker}>01 / {copy.structure}</div><h2>{agentState.title}</h2><p>{locale === "zh" ? agentState.summary : copy.summary}</p></div><div className={styles.panelHeaderActions}><button className={styles.iconTextButton} onClick={copyState} title={copy.copyJson}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? copy.copied : copy.copyJson}</button><button className={styles.iconTextButton} onClick={() => setJsonOpen((value) => !value)}><ChevronDown className={jsonOpen ? styles.rotated : ""} size={15} />JSON</button></div></div>
           <div className={styles.structureBody}>
             <div className={styles.structureIntro}><div className={styles.legend}><span><i data-status="in_progress" />{copy.status.in_progress}</span><span><i data-status="needs_input" />{copy.status.needs_input}</span><span><i data-status="verified" />{copy.status.verified}</span></div><div className={styles.focusLine}><span>{copy.currentFocus}</span><strong>{agentState.focus}</strong><span className={styles.updateTime}>{copy.updated} {agentState.updatedAt}</span></div></div>
-            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />{copy.graph}</div>{renderNetworkGraph()}<div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />{copy.unresolved}</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
+            <div className={styles.graphTabs} role="tablist" aria-label="认知结构视图">
+              <button className={styles.graphTab} data-active={graphView === "process"} role="tab" aria-selected={graphView === "process"} onClick={() => setGraphView("process")}>{copy.processGraph}</button>
+              <button className={styles.graphTab} data-active={graphView === "knowledge"} role="tab" aria-selected={graphView === "knowledge"} onClick={() => setGraphView("knowledge")}>{copy.knowledgeGraph}</button>
+            </div>
+            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />{graphView === "process" ? copy.graph : copy.knowledgeGraph}</div>{graphView === "process" ? renderNetworkGraph() : renderKnowledgeGraph()}<div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />{copy.unresolved}</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
             {jsonOpen ? <pre className={styles.jsonPanel}>{visibleJson}</pre> : null}
           </div>
         </section>

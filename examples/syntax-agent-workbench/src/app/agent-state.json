@@ -54,6 +54,24 @@
       "confidence": 0.91
     }
   ],
+  "entities": [
+    { "id": "user", "name": "用户", "type": "主体", "detail": "提出目标、约束和确认要求的人。", "confidence": 0.96 },
+    { "id": "agent", "name": "Agent", "type": "执行主体", "detail": "理解请求、拆解任务并提出行动候选。", "confidence": 0.93 },
+    { "id": "task", "name": "任务", "type": "业务对象", "detail": "需要被规划、执行和验证的目标对象。", "confidence": 0.9 },
+    { "id": "memory_record", "name": "记忆条目", "type": "信息对象", "detail": "带有来源、时间、置信度和重建路径的可恢复信息。", "confidence": 0.86 },
+    { "id": "evidence", "name": "证据来源", "type": "信息对象", "detail": "支持或否定某个结论的文档、工具结果或观察。", "confidence": 0.82 },
+    { "id": "tool", "name": "工具", "type": "能力对象", "detail": "执行外部动作、读取数据或进行验证的接口。", "confidence": 0.8 },
+    { "id": "policy", "name": "权限与规则", "type": "约束对象", "detail": "决定哪些动作可以执行、哪些结果需要人工确认。", "confidence": 0.78 }
+  ],
+  "relations": [
+    { "id": "user-asks-agent", "source": "user", "target": "agent", "type": "提出请求", "confidence": 0.96 },
+    { "id": "agent-decomposes-task", "source": "agent", "target": "task", "type": "拆解", "confidence": 0.9 },
+    { "id": "task-writes-memory", "source": "task", "target": "memory_record", "type": "沉淀", "confidence": 0.84 },
+    { "id": "memory-supported-by-evidence", "source": "memory_record", "target": "evidence", "type": "来源于", "confidence": 0.84 },
+    { "id": "agent-uses-tool", "source": "agent", "target": "tool", "type": "调用", "confidence": 0.8 },
+    { "id": "policy-governs-tool", "source": "policy", "target": "tool", "type": "约束", "confidence": 0.78 },
+    { "id": "user-confirms-result", "source": "user", "target": "task", "type": "确认", "confidence": 0.74 }
+  ],
   "unresolved": ["长期记忆保留多久？", "哪些动作需要人工确认？"],
   "updatedAt": "刚刚"
 }
