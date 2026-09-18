@@ -10,6 +10,7 @@ import {
   Copy,
   Download,
   KeyRound,
+  Languages,
   Play,
   RotateCcw,
   Send,
@@ -62,8 +63,89 @@ const initialMessages: ChatMessage[] = [
   { role: "assistant", content: "已把注意力移动到“可恢复记忆”和“验证与裁决”。下一步建议明确记忆的来源、有效期和重新读取路径。", timestamp: "09:42" },
 ];
 
-const defaultConfig: ApiConfig = { baseUrl: "https://api.aixhan.com/v1", apiKey: "", model: "gpt-4o-mini" };
-const statusLabels: Record<NodeStatus, string> = { ready: "待处理", in_progress: "进行中", needs_input: "待确认", verified: "已验证" };
+const defaultConfig: ApiConfig = { baseUrl: "https://api.aixhan.com/v1", apiKey: "", model: "gpt-5.5" };
+const modelOptions = [
+  { value: "gpt-5.5", label: "GPT-5.5" },
+  { value: "gpt-6-astra", label: "GPT-6 Astra" },
+  { value: "gpt-5.6-sol", label: "GPT-5.6 Sol" },
+  { value: "gpt-5.6-terra", label: "GPT-5.6 Terra" },
+  { value: "gpt-5.6-luna", label: "GPT-5.6 Luna" },
+  { value: "gpt-5.2", label: "GPT-5.2" },
+];
+const uiCopy = {
+  zh: {
+    title: "句法 Agent 工作台",
+    brand: "句法方法论",
+    structure: "结构",
+    assistant: "助手",
+    summary: "把一次自然语言请求拆解为可验证的任务结构。",
+    reset: "重置",
+    exportJson: "导出 JSON",
+    settings: "连接设置",
+    copyJson: "复制 JSON",
+    copied: "已复制",
+    currentFocus: "当前焦点",
+    updated: "更新于",
+    graph: "依存任务图 / 实时状态",
+    unresolved: "待解决依赖",
+    assistantTitle: "结构化架构助手",
+    localFirst: "本地优先",
+    apiConnected: "API 已连接",
+    localDemo: "本地演示",
+    keyNote: "API Key 只保存在当前浏览器的 localStorage，不会写入仓库。",
+    placeholder: "告诉助手你想修改哪一块结构…",
+    sendHint: "Enter 发送 · Shift + Enter 换行",
+    send: "发送",
+    configure: "配置模型连接",
+    getKey: "获取 API Key",
+    connection: "连接",
+    connectionTitle: "模型连接设置",
+    connectionIntro: "支持 OpenAI-compatible 的 /chat/completions 接口。不要把生产密钥提交到代码仓库。",
+    baseUrl: "API Base URL",
+    apiKey: "API Key",
+    model: "模型",
+    save: "保存设置",
+    clearKey: "清除 Key",
+    localNote: "当前示例默认本地演示模式，不需要 API Key 也可以体验结构更新。",
+    status: { ready: "待处理", in_progress: "进行中", needs_input: "待确认", verified: "已验证" },
+  },
+  en: {
+    title: "Syntax Agent Workbench",
+    brand: "Syntax Methodology",
+    structure: "Structure",
+    assistant: "Assistant",
+    summary: "Turn a natural-language request into a verifiable task structure.",
+    reset: "Reset",
+    exportJson: "Export JSON",
+    settings: "Connection",
+    copyJson: "Copy JSON",
+    copied: "Copied",
+    currentFocus: "Focus",
+    updated: "Updated",
+    graph: "Dependency graph / live state",
+    unresolved: "Open dependencies",
+    assistantTitle: "Structured architecture assistant",
+    localFirst: "Local-first",
+    apiConnected: "API connected",
+    localDemo: "Local demo",
+    keyNote: "The API key stays in this browser's localStorage and is never written to the repository.",
+    placeholder: "Tell the assistant which part of the structure to change…",
+    sendHint: "Enter to send · Shift + Enter for a new line",
+    send: "Send",
+    configure: "Configure model",
+    getKey: "Get API key",
+    connection: "Connection",
+    connectionTitle: "Model connection",
+    connectionIntro: "Supports an OpenAI-compatible /chat/completions endpoint. Never commit a production key to the repository.",
+    baseUrl: "API Base URL",
+    apiKey: "API Key",
+    model: "Model",
+    save: "Save settings",
+    clearKey: "Clear key",
+    localNote: "This example starts in local demo mode. You can explore structure updates without an API key.",
+    status: { ready: "Ready", in_progress: "In progress", needs_input: "Needs input", verified: "Verified" },
+  },
+} as const;
 
 function nowLabel() {
   return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" }).format(new Date());
@@ -96,6 +178,7 @@ function parseModelResponse(content: string, state: AgentState) {
 }
 
 export default function Home() {
+  const [locale, setLocale] = useState<"zh" | "en">("zh");
   const [agentState, setAgentState] = useState<AgentState>(defaultState);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
@@ -105,11 +188,16 @@ export default function Home() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ goal: true, plan: true });
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const copy = uiCopy[locale];
 
   useEffect(() => {
     const stored = window.localStorage.getItem("syntax-agent-config");
     if (stored) {
-      try { setConfig({ ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) }); } catch { window.localStorage.removeItem("syntax-agent-config"); }
+      try {
+        const nextConfig = { ...defaultConfig, ...(JSON.parse(stored) as ApiConfig) };
+        if (!nextConfig.model || nextConfig.model === "gpt-4o-mini") nextConfig.model = "gpt-5.5";
+        setConfig(nextConfig);
+      } catch { window.localStorage.removeItem("syntax-agent-config"); }
     }
   }, []);
 
@@ -125,7 +213,7 @@ export default function Home() {
         <div className={`${styles.node} ${agentState.focus === node.label ? styles.nodeFocused : ""}`} style={{ marginLeft: `${depth * 28}px` }}>
           <div className={styles.nodeAccent} data-status={node.status} />
           <div className={styles.nodeMain}>
-            <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{statusLabels[node.status]}</span></div>
+            <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{copy.status[node.status]}</span></div>
             <div className={styles.nodeTitleRow}><strong>{node.label}</strong>{hasChildren ? <button className={styles.iconButton} aria-label={isExpanded ? "收起节点" : "展开节点"} onClick={() => setExpanded((current) => ({ ...current, [node.id]: !current[node.id] }))}>{isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button> : null}</div>
             <p>{node.detail}</p>
             <div className={styles.nodeMeta}><span>confidence {Math.round(node.confidence * 100)}%</span><span>id:{node.id}</span></div>
@@ -204,34 +292,35 @@ export default function Home() {
   return (
     <main className={styles.shell}>
       <header className={styles.topbar}>
-        <div className={styles.brandBlock}><div className={styles.brandMark}><Sparkles size={18} /></div><div><div className={styles.eyebrow}>SYNTAX METHODOLOGY</div><h1>Agent Workbench</h1></div></div>
+        <div className={styles.brandBlock}><div className={styles.brandMark}><Sparkles size={18} /></div><div><div className={styles.eyebrow}>{copy.brand}</div><h1>{copy.title}</h1></div></div>
         <div className={styles.topActions}>
-          <span className={styles.modeBadge}><span className={styles.liveDot} />{config.apiKey ? "API 已连接" : "本地演示"}</span>
-          <button className={styles.secondaryButton} onClick={resetWorkspace} title="重置工作区"><RotateCcw size={15} />重置</button>
-          <button className={styles.secondaryButton} onClick={exportState} title="导出当前 JSON"><Download size={15} />导出 JSON</button>
-          <button className={styles.primaryButton} onClick={() => setSettingsOpen(true)}><Settings2 size={15} />连接设置</button>
+          <span className={styles.modeBadge}><span className={styles.liveDot} />{config.apiKey ? copy.apiConnected : copy.localDemo}</span>
+          <button className={styles.secondaryButton} onClick={resetWorkspace} title={copy.reset}><RotateCcw size={15} />{copy.reset}</button>
+          <button className={styles.secondaryButton} onClick={exportState} title={copy.exportJson}><Download size={15} />{copy.exportJson}</button>
+          <button className={styles.secondaryButton} onClick={() => setLocale((value) => value === "zh" ? "en" : "zh")} title="切换语言 / Switch language"><Languages size={15} />{locale === "zh" ? "中 / EN" : "EN / 中"}</button>
+          <button className={styles.primaryButton} onClick={() => setSettingsOpen(true)}><Settings2 size={15} />{copy.settings}</button>
         </div>
       </header>
 
       <section className={styles.workspace}>
         <section className={styles.structurePanel}>
-          <div className={styles.panelHeader}><div><div className={styles.panelKicker}>01 / STRUCTURE</div><h2>{agentState.title}</h2><p>{agentState.summary}</p></div><div className={styles.panelHeaderActions}><button className={styles.iconTextButton} onClick={copyState} title="复制结构 JSON">{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "已复制" : "复制 JSON"}</button><button className={styles.iconTextButton} onClick={() => setJsonOpen((value) => !value)}><ChevronDown className={jsonOpen ? styles.rotated : ""} size={15} />JSON</button></div></div>
+          <div className={styles.panelHeader}><div><div className={styles.panelKicker}>01 / {copy.structure}</div><h2>{agentState.title}</h2><p>{locale === "zh" ? agentState.summary : copy.summary}</p></div><div className={styles.panelHeaderActions}><button className={styles.iconTextButton} onClick={copyState} title={copy.copyJson}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? copy.copied : copy.copyJson}</button><button className={styles.iconTextButton} onClick={() => setJsonOpen((value) => !value)}><ChevronDown className={jsonOpen ? styles.rotated : ""} size={15} />JSON</button></div></div>
           <div className={styles.structureBody}>
-            <div className={styles.structureIntro}><div className={styles.legend}><span><i data-status="in_progress" />进行中</span><span><i data-status="needs_input" />待确认</span><span><i data-status="verified" />已验证</span></div><div className={styles.focusLine}><span>当前焦点</span><strong>{agentState.focus}</strong><span className={styles.updateTime}>更新于 {agentState.updatedAt}</span></div></div>
-            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />依存任务图 / live state</div><div className={styles.graphTree}>{renderNode("goal")}</div><div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />待解决依赖</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
+            <div className={styles.structureIntro}><div className={styles.legend}><span><i data-status="in_progress" />{copy.status.in_progress}</span><span><i data-status="needs_input" />{copy.status.needs_input}</span><span><i data-status="verified" />{copy.status.verified}</span></div><div className={styles.focusLine}><span>{copy.currentFocus}</span><strong>{agentState.focus}</strong><span className={styles.updateTime}>{copy.updated} {agentState.updatedAt}</span></div></div>
+            <div className={styles.graphCanvas}><div className={styles.graphLabel}><span />{copy.graph}</div><div className={styles.graphTree}>{renderNode("goal")}</div><div className={styles.unresolvedStrip}><div className={styles.unresolvedTitle}><CircleHelp size={15} />{copy.unresolved}</div>{agentState.unresolved.map((item) => <span key={item}>{item}</span>)}</div></div>
             {jsonOpen ? <pre className={styles.jsonPanel}>{visibleJson}</pre> : null}
           </div>
         </section>
 
         <aside className={styles.chatPanel}>
-          <div className={styles.chatHeader}><div className={styles.assistantIdentity}><div className={styles.assistantAvatar}><Bot size={18} /></div><div><div className={styles.panelKicker}>02 / ASSISTANT</div><h2>结构化架构助手</h2></div></div><span className={styles.secureLabel}><ShieldCheck size={14} />local-first</span></div>
-          <div className={styles.chatMessages}><div className={styles.systemNote}><KeyRound size={14} />API Key 只保存在当前浏览器的 localStorage，不会写入仓库。</div>{messages.map((message, index) => <div key={`${message.timestamp}-${index}`} className={`${styles.messageRow} ${message.role === "user" ? styles.userRow : ""}`}><div className={styles.messageMeta}><span>{message.role === "user" ? "你" : "助手"}</span><time>{message.timestamp}</time></div><div className={`${styles.messageBubble} ${message.role === "user" ? styles.userBubble : ""}`}>{message.content}</div></div>)}{isSending ? <div className={styles.typing}><span /><span /><span />正在更新结构…</div> : null}</div>
-          <form className={styles.composer} onSubmit={sendMessage}><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="告诉助手你想修改哪一块结构…" rows={3} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} /><div className={styles.composerFooter}><span>Enter 发送 · Shift + Enter 换行</span><button className={styles.sendButton} disabled={!draft.trim() || isSending} title="发送消息"><Send size={16} />发送</button></div></form>
-          <div className={styles.chatFooter}><button className={styles.footerLink} onClick={() => setSettingsOpen(true)}><Settings2 size={14} />配置模型连接</button><a href="https://cdk.aixhan.com/?aff=af_1bb942815b09" target="_blank" rel="noreferrer">获取 API Key <Play size={12} /></a></div>
+          <div className={styles.chatHeader}><div className={styles.assistantIdentity}><div className={styles.assistantAvatar}><Bot size={18} /></div><div><div className={styles.panelKicker}>02 / {copy.assistant}</div><h2>{copy.assistantTitle}</h2></div></div><span className={styles.secureLabel}><ShieldCheck size={14} />{copy.localFirst}</span></div>
+          <div className={styles.chatMessages}><div className={styles.systemNote}><KeyRound size={14} />{copy.keyNote}</div>{messages.map((message, index) => <div key={`${message.timestamp}-${index}`} className={`${styles.messageRow} ${message.role === "user" ? styles.userRow : ""}`}><div className={styles.messageMeta}><span>{message.role === "user" ? (locale === "zh" ? "你" : "You") : (locale === "zh" ? "助手" : "Assistant")}</span><time>{message.timestamp}</time></div><div className={`${styles.messageBubble} ${message.role === "user" ? styles.userBubble : ""}`}>{message.content}</div></div>)}{isSending ? <div className={styles.typing}><span /><span /><span />{locale === "zh" ? "正在更新结构…" : "Updating structure…"}</div> : null}</div>
+          <form className={styles.composer} onSubmit={sendMessage}><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={copy.placeholder} rows={3} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} /><div className={styles.composerFooter}><span>{copy.sendHint}</span><button className={styles.sendButton} disabled={!draft.trim() || isSending} title={copy.send}><Send size={16} />{copy.send}</button></div></form>
+          <div className={styles.chatFooter}><button className={styles.footerLink} onClick={() => setSettingsOpen(true)}><Settings2 size={14} />{copy.configure}</button><a href="https://cdk.aixhan.com/?aff=af_1bb942815b09" target="_blank" rel="noreferrer">{copy.getKey} <Play size={12} /></a></div>
         </aside>
       </section>
 
-      {settingsOpen ? <div className={styles.modalBackdrop} role="presentation" onMouseDown={() => setSettingsOpen(false)}><div className={styles.settingsModal} role="dialog" aria-modal="true" aria-labelledby="settings-title" onMouseDown={(event) => event.stopPropagation()}><div className={styles.modalHeader}><div><div className={styles.panelKicker}>CONNECTION</div><h2 id="settings-title">模型连接设置</h2></div><button className={styles.iconButton} onClick={() => setSettingsOpen(false)} aria-label="关闭设置"><X size={18} /></button></div><p className={styles.modalIntro}>支持 OpenAI-compatible 的 `/chat/completions` 接口。不要把生产密钥提交到代码仓库。</p><label>API Base URL<input value={config.baseUrl} onChange={(event) => setConfig({ ...config, baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label><label>API Key<input type="password" value={config.apiKey} onChange={(event) => setConfig({ ...config, apiKey: event.target.value })} placeholder="sk-..." autoComplete="off" /></label><label>Model<input value={config.model} onChange={(event) => setConfig({ ...config, model: event.target.value })} placeholder="gpt-4o-mini" /></label><div className={styles.modalActions}><button className={styles.secondaryButton} onClick={() => saveConfig({ ...defaultConfig, apiKey: "" })}>清除 Key</button><button className={styles.primaryButton} onClick={() => saveConfig(config)}><Check size={15} />保存设置</button></div><div className={styles.modalNote}><ShieldCheck size={15} />当前示例默认本地演示模式，不需要 API Key 也可以体验结构更新。</div></div></div> : null}
+      {settingsOpen ? <div className={styles.modalBackdrop} role="presentation" onMouseDown={() => setSettingsOpen(false)}><div className={styles.settingsModal} role="dialog" aria-modal="true" aria-labelledby="settings-title" onMouseDown={(event) => event.stopPropagation()}><div className={styles.modalHeader}><div><div className={styles.panelKicker}>{copy.connection}</div><h2 id="settings-title">{copy.connectionTitle}</h2></div><button className={styles.iconButton} onClick={() => setSettingsOpen(false)} aria-label="关闭设置"><X size={18} /></button></div><p className={styles.modalIntro}>{copy.connectionIntro}</p><label>{copy.baseUrl}<input value={config.baseUrl} onChange={(event) => setConfig({ ...config, baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label><label>{copy.apiKey}<input type="password" value={config.apiKey} onChange={(event) => setConfig({ ...config, apiKey: event.target.value })} placeholder="sk-..." autoComplete="off" /></label><label>{copy.model}<select value={config.model} onChange={(event) => setConfig({ ...config, model: event.target.value })}>{modelOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><div className={styles.modalActions}><button className={styles.secondaryButton} onClick={() => saveConfig({ ...defaultConfig, apiKey: "" })}>{copy.clearKey}</button><button className={styles.primaryButton} onClick={() => saveConfig(config)}><Check size={15} />{copy.save}</button></div><div className={styles.modalNote}><ShieldCheck size={15} />{copy.localNote}</div></div></div> : null}
     </main>
   );
 }

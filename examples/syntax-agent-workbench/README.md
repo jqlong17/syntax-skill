@@ -15,7 +15,9 @@ pnpm dev
 
 - 不配置 API Key 时，页面使用本地演示模式；输入“记忆”或“验证”即可看到结构焦点更新。
 - 点击“连接设置”，填写 OpenAI-compatible API Base URL、API Key 和模型名称。
-- 默认 Base URL 是 `https://api.aixhan.com/v1`，但项目不会预置任何 API Key。
+- 默认 Base URL 是 `https://api.aixhan.com/v1`，默认模型是 `gpt-5.5`，但项目不会预置任何 API Key。
+- 模型下拉菜单支持 `gpt-5.5`、`gpt-6-astra`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna` 和 `gpt-5.2`。
+- 页面默认使用中文，右上角可以切换到英文界面。
 - 模型需要返回 JSON：
 
 ```json
