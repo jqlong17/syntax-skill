@@ -11,18 +11,22 @@ This project contains a portable methodology layer derived from Edward A. F. Gib
 ## Read in this order
 
 1. Read `SKILL.md` for the core stance and domain routing.
-2. Read `references/agent-design-protocol.md` for the shared state model, control loop, decision gates, and output contract.
-3. Read only the relevant `references/domain-*.md` files; do not load all eight by default.
-4. Read `references/source-map.md` when a claim needs the book's surrounding context or a precise citation.
+2. Read `references/core-methodology.md` for the book's central abstraction and broader architecture implications.
+3. Read `references/agent-design-protocol.md` for the shared state model, control loop, decision gates, and output contract.
+4. Read only the relevant `references/domain-*.md` files; do not load all eight by default.
+5. Read `references/source-map.md` when a claim needs the book's surrounding context or a precise citation.
 
 ## Required design behavior
 
 - Keep utterance, interpretation, world state, task graph, plan, execution, verification, and response as separate objects.
 - Treat model outputs as candidates until grounding, policy checks, tools, or validators accept them.
+- Do not use fluency as a proxy for intelligence, grounding, or task completion.
 - Represent unresolved dependencies explicitly instead of silently guessing.
 - Keep critical references local in the active state and preserve provenance for compressed memory.
+- Treat long context as a possible source of interference; use rebinding and stage-local state.
 - Gate irreversible, permission-sensitive, or externally visible actions before execution.
 - After tool execution, verify postconditions and replan when evidence invalidates the current plan.
+- Judge architecture with falsifiable tests and recovery behavior, not demos alone.
 - Cite source-grounded ideas with chapter, section, page, XHTML file, and anchor; label engineering extrapolations as applications.
 
 ## Required architecture handoff
