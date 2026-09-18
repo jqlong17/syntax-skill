@@ -5,6 +5,7 @@ import {
   Bot,
   Check,
   ChevronDown,
+  ChevronRight,
   CircleHelp,
   Copy,
   Download,
@@ -92,6 +93,11 @@ const networkLinks = [
 
 const networkNodeWidth = 246;
 const networkNodeHeight = 118;
+const statusOrder: NodeStatus[] = ["ready", "in_progress", "needs_input", "verified"];
+
+function statusColor(status: NodeStatus) {
+  return { ready: "#a6aaa5", in_progress: "#d7874d", needs_input: "#c96766", verified: "#5a927f" }[status];
+}
 const uiCopy = {
   zh: {
     title: "句法 Agent 工作台",
@@ -106,7 +112,7 @@ const uiCopy = {
     copied: "已复制",
     currentFocus: "当前焦点",
     updated: "更新于",
-    graph: "依存任务图 / 实时状态",
+    graph: "状态依存网络 / 实时状态",
     unresolved: "待解决依赖",
     assistantTitle: "结构化架构助手",
     localFirst: "本地优先",
@@ -142,7 +148,7 @@ const uiCopy = {
     copied: "Copied",
     currentFocus: "Focus",
     updated: "Updated",
-    graph: "Dependency graph / live state",
+    graph: "State dependency network / live state",
     unresolved: "Open dependencies",
     assistantTitle: "Structured architecture assistant",
     localFirst: "Local-first",
@@ -278,7 +284,16 @@ export default function Home() {
 
   function renderNetworkGraph() {
     return (
-      <div className={styles.networkViewport} aria-label="依存任务网络">
+      <div className={styles.networkViewport} aria-label="状态依存网络">
+        <div className={styles.stateFlow} aria-label="节点状态流转">
+          {statusOrder.map((status, index) => (
+            <div className={styles.stateFlowItem} key={status}>
+              <span className={styles.stateFlowDot} data-status={status} />
+              <span>{copy.status[status]}</span>
+              {index < statusOrder.length - 1 ? <ChevronRight size={13} /> : null}
+            </div>
+          ))}
+        </div>
         <div className={styles.networkStage}>
           <svg className={styles.networkEdges} viewBox="0 0 930 540" role="img" aria-label="节点依赖连线">
             <defs>
@@ -289,12 +304,14 @@ export default function Home() {
             {networkLinks.map(([sourceId, targetId]) => {
               const source = networkNodePositions[sourceId];
               const target = networkNodePositions[targetId];
+              const targetNode = agentState.nodes.find((node) => node.id === targetId);
               const startX = source.x + networkNodeWidth;
               const startY = source.y + networkNodeHeight / 2;
               const endX = target.x;
               const endY = target.y + networkNodeHeight / 2;
               const bend = Math.max(38, Math.abs(endX - startX) * 0.42);
-              return <path key={`${sourceId}-${targetId}`} className={styles.networkEdge} d={`M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`} markerEnd="url(#network-arrow)" />;
+              const isFocused = agentState.focus === targetNode?.label || agentState.focus === agentState.nodes.find((node) => node.id === sourceId)?.label;
+              return <path key={`${sourceId}-${targetId}`} className={styles.networkEdge} style={{ stroke: statusColor(targetNode?.status ?? "ready"), opacity: isFocused ? 1 : 0.62, strokeWidth: isFocused ? 2.2 : 1.4 }} d={`M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`} markerEnd="url(#network-arrow)" />;
             })}
           </svg>
           <div className={styles.networkNodes}>
@@ -307,6 +324,9 @@ export default function Home() {
                   <div className={styles.nodeMain}>
                     <div className={styles.nodeTopline}><span className={styles.nodeKind}>{node.kind}</span><span className={styles.nodeStatus} data-status={node.status}>{copy.status[node.status]}</span></div>
                     <div className={styles.nodeTitleRow}><strong>{node.label}</strong></div>
+                    <div className={styles.nodeStateRail} aria-label={`当前状态：${copy.status[node.status]}`}>
+                      {statusOrder.map((status, index) => <span key={status} className={styles.nodeStateStep} data-status={status} data-current={status === node.status} data-complete={index < statusOrder.indexOf(node.status)} />)}
+                    </div>
                     <p>{node.detail}</p>
                     <div className={styles.nodeMeta}><span>confidence {Math.round(node.confidence * 100)}%</span><span>id:{node.id}</span></div>
                   </div>
