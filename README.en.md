@@ -23,6 +23,20 @@ The skill contains one entrypoint, a shared Agent Design Protocol, and eight foc
 
 The shared [Agent Design Protocol](references/agent-design-protocol.md) defines the state model, domain-card contract, observe-to-verify control loop, risk-sensitive gates, architecture deliverables, and falsification tests.
 
+## Core methodology
+
+The book's central insight can be compressed into one sentence: **language form is structured evidence about meaning, not meaning itself; reliable understanding requires structure, context, memory, world state, uncertainty handling, and verification.**
+
+The project turns that insight into eight propositions: form is not meaning; structure carries the work; communication is noisy; memory is resource-bounded; critical dependencies should stay local; planning is not verbalization; quality is graded and multidimensional; and candidate generation is not final arbitration. The full abstraction is documented in [references/core-methodology.md](references/core-methodology.md).
+
+## Estimated token consumption
+
+The project included first-pass translation, chapter-by-chapter bilingual checks, EPUB structure repair, whole-book quality review, and final packaging validation. Based on the actual EPUB text volume and workflow, the estimated total is:
+
+> **Approximately 800,000-1,300,000 tokens**, with a broad upper bound near **1.5 million tokens** when repeated reads, context switching, tool output, and local rework are included.
+
+The English Chapters 1-11 contain about 124,000 tokens and the Chinese translation contains about 139,000 tokens under an `o200k`-style tokenizer. A speed-only first pass would be roughly 350,000-550,000 tokens, but that would not represent the final quality workflow. These are workload estimates, not a backend billing record.
+
 ## Why this matters for AI and agents
 
 The core design risk in language-first systems is confusing a well-formed string with a solved task. This skill gives an implementation team a compact vocabulary for keeping interpretation, world state, planning, execution, verification, memory, and communication separate.
