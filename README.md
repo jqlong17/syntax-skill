@@ -2,49 +2,49 @@
 
 > 中文版为默认入口。English version: [README.en.md](README.en.md)
 
-`syntax-skill` is a reusable Codex skill that turns the central distinctions in Edward A. F. Gibson's *Syntax: A Cognitive Approach* into a practical theory layer for AI and agent design.
+`syntax-skill` 是一个可复用的 Codex skill。它以 Edward A. F. Gibson 的《Syntax: A Cognitive Approach》为理论基础，把语言形式、依存结构、记忆、上下文、噪声、规划和验证等概念，转化为可用于 AI 与 Agent 架构设计的方法论。
 
-It is intended for systems where language is only one part of the problem: memory, dialogue, task decomposition, planning, tool use, verification, uncertainty, and multi-agent coordination. The skill helps an implementation team ask a prior question before adding more prompting: what structure, state, evidence, and control loop must exist outside the language model?
+它适用于语言只是问题一部分的系统：长期记忆、对话管理、任务拆解、任务规划、工具调用、结果验证、不确定性处理和多 Agent 协作。它帮助设计者在继续增加 prompt 之前，先回答一个更基础的问题：语言模型之外，还需要哪些结构、状态、证据和控制循环？
 
-## What it provides
+## 这个 Skill 提供什么
 
-The skill contains one entrypoint and eight focused reference skills:
+Skill 由一个主入口、一个共享的 Agent 设计协议，以及八个可独立读取的领域参考组成：
 
-1. **Form vs. meaning**: keep fluent language separate from grounded world state.
-2. **Dependency task representation**: convert requests into typed graphs of entities, actions, constraints, and dependencies.
-3. **Noisy-channel inference**: treat input, retrieval, tools, and execution as channels with corruption and uncertainty.
-4. **Lossy memory**: compress context while preserving provenance, confidence, scope, and recovery paths.
-5. **Locality and state distance**: keep facts near the actions that consume them and reduce reference interference.
-6. **Planning vs. generation**: separate task graphs, planning, execution, verification, and final wording.
-7. **Multidimensional evaluation**: measure understanding, grounding, execution, verification, calibration, and repairability separately.
-8. **Candidate generation vs. arbitration**: let the LLM propose; let tools, policies, schemas, validators, and humans decide.
+1. **形式与意义的分离**：不要把流畅语言直接当成真实世界状态。
+2. **依存结构与任务表示**：把用户请求转化为实体、动作、约束和依存关系构成的类型化任务图。
+3. **噪声信道与鲁棒推断**：把输入、检索、工具和执行都看成可能出错的通信信道。
+4. **有损记忆与可恢复上下文**：允许压缩记忆，但必须保留来源、置信度、范围和恢复路径。
+5. **局部性与状态引用距离**：让关键事实靠近使用它们的动作，降低长上下文中的引用干扰。
+6. **规划与语言生成分离**：把任务图、规划、执行、验证和最终措辞拆开。
+7. **多维 Agent 评估**：分别评价任务理解、事实 grounding、工具选择、执行、验证、校准和修复能力。
+8. **候选生成与最终裁决分离**：让 LLM 提出候选，让工具、规则、验证器和人来决定是否接受。
 
-The shared [agent design protocol](references/agent-design-protocol.md) makes these domains composable. It defines a common state model, a domain-card contract, a standard observe-to-verify loop, risk-sensitive decision gates, architecture deliverables, and falsification tests.
+共享的 [Agent 设计协议](references/agent-design-protocol.md) 负责把这八个领域组合起来，定义统一状态模型、领域卡片规范、从观察到验证的控制循环、风险敏感的决策门槛、架构输出格式和反证测试。
 
-## Why this matters for AI and agents
+## 为什么它对 AI 和 Agent 重要
 
-The core design risk in language-first systems is confusing a well-formed string with a solved task. This skill provides a compact vocabulary for avoiding that confusion:
+语言系统最容易犯的根本错误，是把“句子说得通”误认为“任务已经解决”。这个 Skill 提供了一套更稳健的设计语言：
 
-- A dialogue manager can treat each turn as evidence about a dependency graph rather than as an isolated prompt.
-- A memory system can summarize aggressively without losing the route back to original evidence.
-- A planner can keep commitments and preconditions explicit instead of hiding them in generated prose.
-- A tool-using agent can decide when to infer, when to ask, and when to verify.
-- An evaluation suite can distinguish a bad interpretation from a bad plan, a failed tool call, or an unverified answer.
+- 对话管理器可以把每轮对话看成依存任务图的证据，而不是孤立 prompt。
+- 记忆系统可以压缩上下文，同时保留回到原始证据的路径。
+- 规划器可以显式保存承诺、前置条件和后置条件，而不是把它们藏在生成文本里。
+- 工具型 Agent 可以明确判断什么时候推断、什么时候追问、什么时候验证。
+- 评估系统可以区分“理解错了”“规划错了”“工具失败了”和“结果没有验证”。
 
-The result is a methodology skill, not a claim that the book directly specifies a modern agent architecture. The engineering patterns are explicitly marked as applications of source-grounded distinctions.
+这不是一本直接给出现代 Agent 软件架构的书，而是一套从语言与认知理论中提炼出来的架构方法。仓库中的工程规则会明确标注为基于原文的设计应用，而不是伪装成书中的直接结论。
 
-## Source traceability
+## 原文引用与上下文追溯
 
-Every domain reference includes a source locator with:
+每个领域参考都包含：
 
-- book and author;
-- chapter and section;
-- printed page range;
-- original EPUB XHTML file;
-- section and pagebreak anchors such as `#hsec10-1` and `#pg_274`;
-- retrieval terms for reopening the surrounding context.
+- 书名与作者；
+- 章节与小节；
+- 印刷页码范围；
+- 原始 EPUB 的 XHTML 文件；
+- 小节锚点和页码锚点，例如 `#hsec10-1`、`#pg_274`；
+- 用于重新检索上下文的关键词。
 
-The canonical citation map is [references/source-map.md](references/source-map.md). It is based on the original English EPUB, not on a summary or a retyped excerpt. The repository intentionally does not copy the full book.
+完整引用地图见 [references/source-map.md](references/source-map.md)。引用基于英文原书的实际 EPUB 结构，而不是摘要或重新抄写的段落。仓库不复制整本书。
 
 ## 书籍资源与引用
 
@@ -55,31 +55,31 @@ The canonical citation map is [references/source-map.md](references/source-map.m
 - 中文译本属于原书的翻译改编版本，公开再分发需要额外的授权；因此 GitHub 仓库只保存索引和引用协议，不保存整本译本。
 - 仓库中的引用始终指向原始 EPUB XHTML 文件、章节锚点和页码锚点，便于 Agent 回读上下文。
 
-## Installation
+## 安装与使用
 
-Copy the `syntax-skill` directory into the Codex skills directory, or invoke it explicitly as `$syntax-skill` after installation. Automatic discovery remains enabled through the standard skill metadata.
+将 `syntax-skill` 目录复制到 Codex skills 目录，或者安装后使用 `$syntax-skill` 显式调用。标准 skill 元数据保持自动发现，不需要额外配置。
 
-## Typical uses
+典型用途包括：
 
-- Design a long-term memory architecture for an assistant.
-- Review a dialogue manager that loses entity bindings across turns.
-- Build a task decomposition and planning protocol.
-- Specify a tool-use and verification loop.
-- Create evaluation dimensions for a multi-agent workflow.
-- Analyze when an LLM output needs grounding, retrieval, or human approval.
-- Turn a natural-language request into a typed task graph with explicit evidence and confirmation gates.
+- 设计助手的长期记忆架构；
+- review 会在多轮对话中丢失实体绑定的对话管理器；
+- 建立任务拆解和任务规划协议；
+- 设计工具调用、执行和验证闭环；
+- 为多 Agent 工作流建立分阶段评估指标；
+- 判断某个 LLM 输出是否需要 grounding、检索或人工确认；
+- 把自然语言请求转化为包含证据要求和确认门槛的类型化任务图。
 
-## Validation
+## 验证
 
-Run:
+运行：
 
 ```bash
 python3 /Users/ruska/.codex/skills/.system/skill-creator/scripts/quick_validate.py /path/to/syntax-skill
 python3 /path/to/syntax-skill/scripts/validate_source_links.py /path/to/syntax-skill
 ```
 
-The first command checks the Codex skill scaffold. The second checks that each domain reference contains chapter, page, XHTML, anchor, and retrieval guidance.
+第一个命令检查 Codex skill 的目录结构和 YAML frontmatter；第二个命令检查八个领域是否都包含章节、页码、XHTML 文件、锚点和回读关键词。
 
-## License and attribution
+## 许可证与致谢
 
-This repository is an original methodology and indexing layer. It is based on the ideas and source locations in Edward A. F. Gibson's *Syntax: A Cognitive Approach*. It does not redistribute the full copyrighted book or the translated EPUB.
+本仓库是一个原创的方法论和引用索引层，基于 Edward A. F. Gibson 的《Syntax: A Cognitive Approach》及其原文定位信息构建。仓库不再分发整本受版权保护的英文原书或中文译本。
