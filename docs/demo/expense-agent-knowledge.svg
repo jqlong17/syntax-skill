@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040">
+  <rect width="1600" height="1040" fill="#ffffff"/>
+  <style>
+    text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;fill:#111}
+    .muted{fill:#666}.small{font-size:14px}.label{font-size:12px;font-weight:800;letter-spacing:2px}.title{font-size:28px;font-weight:800}.body{font-size:14px}.meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;fill:#777}.card{fill:#fff;stroke:#111;stroke-width:2}.edge{fill:none;stroke:#6c7a86;stroke-width:2;opacity:.74}.edge.focus{stroke:#111;stroke-width:3}.rel{font-size:12px;fill:#68717a;text-anchor:middle}.accent{fill:#6c7a86}
+  </style>
+  <line x1="40" y1="104" x2="1560" y2="104" stroke="#111" stroke-width="2"/>
+  <text x="40" y="44" class="label muted">SYNTAX AGENT WORKBENCH / DEMO</text>
+  <text x="40" y="82" class="title">报销审批 Agent · 业务认知图谱</text>
+  <text x="1230" y="48" class="small muted">实体 16 · 关系 19</text>
+  <text x="1230" y="76" class="meta">真实 gpt-5.5 patch</text>
+  <g>
+    <path d="M280 180C370 180 370 180 470 180" class="edge"/><text x="375" y="169" class="rel">提出请求</text>
+    <path d="M750 180C850 180 850 180 940 180" class="edge focus"/><text x="845" y="169" class="rel">抽取字段</text>
+    <path d="M280 340C370 340 370 340 470 340" class="edge"/><text x="375" y="329" class="rel">提交</text>
+    <path d="M750 340C850 340 850 340 940 340" class="edge"/><text x="845" y="329" class="rel">关联发票</text>
+    <path d="M1220 240L1220 280" class="edge"/><text x="1325" y="265" class="rel">受政策约束</text>
+    <path d="M280 500C370 500 370 500 470 500" class="edge"/><text x="375" y="489" class="rel">超额路由</text>
+    <path d="M750 500C850 500 850 500 940 500" class="edge focus"/><text x="845" y="489" class="rel">审批前置</text>
+    <path d="M1220 560L1220 600" class="edge"/><text x="1325" y="585" class="rel">异常转人工</text>
+    <path d="M280 660C370 660 370 660 470 660" class="edge"/><text x="375" y="649" class="rel">经理审批</text>
+    <path d="M750 660C850 660 850 660 940 660" class="edge"/><text x="845" y="649" class="rel">生成审计</text>
+    <path d="M1220 820C1320 820 1320 820 1420 820" class="edge"/><text x="1320" y="809" class="rel">可撤销沉淀</text>
+  </g>
+  <g transform="translate(40 120)"><rect width="240" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">主体</text><text x="22" y="62" class="title" font-size="20">用户</text><text x="22" y="91" class="body">提出目标与确认要求</text><text x="22" y="109" class="meta">confidence 96%</text></g>
+  <g transform="translate(470 120)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">执行主体</text><text x="22" y="62" class="title" font-size="20">Agent</text><text x="22" y="91" class="body">抽取、校验、提出候选</text><text x="22" y="109" class="meta">confidence 98%</text></g>
+  <g transform="translate(940 120)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">业务对象</text><text x="22" y="62" class="title" font-size="20">报销单</text><text x="22" y="91" class="body">金额、项目、审批状态</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(40 280)"><rect width="240" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">角色</text><text x="22" y="62" class="title" font-size="20">员工</text><text x="22" y="91" class="body">提交与补充材料</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(470 280)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">证据对象</text><text x="22" y="62" class="title" font-size="20">发票</text><text x="22" y="91" class="body">金额、日期、号码</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(940 280)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">规则对象</text><text x="22" y="62" class="title" font-size="20">报销政策</text><text x="22" y="91" class="body">资格、阈值、升级规则</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(40 440)"><rect width="240" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">角色</text><text x="22" y="62" class="title" font-size="20">部门经理</text><text x="22" y="91" class="body">超过 5000 元时审批</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(470 440)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">审计对象</text><text x="22" y="62" class="title" font-size="20">审批记录</text><text x="22" y="91" class="body">审批人、时间、依据</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(940 440)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">外部系统</text><text x="22" y="62" class="title" font-size="20">财务系统</text><text x="22" y="91" class="body">审批通过后接收数据</text><text x="22" y="109" class="meta">confidence 98%</text></g>
+  <g transform="translate(40 600)"><rect width="240" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">角色</text><text x="22" y="62" class="title" font-size="20">财务人员</text><text x="22" y="91" class="body">复核、操作、异常处理</text><text x="22" y="109" class="meta">confidence 96%</text></g>
+  <g transform="translate(470 600)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">审计对象</text><text x="22" y="62" class="title" font-size="20">审计记录</text><text x="22" y="91" class="body">操作者、快照、证据链</text><text x="22" y="109" class="meta">confidence 98%</text></g>
+  <g transform="translate(940 600)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">处置对象</text><text x="22" y="62" class="title" font-size="20">人工复核</text><text x="22" y="91" class="body">异常时转人工处理</text><text x="22" y="109" class="meta">confidence 99%</text></g>
+  <g transform="translate(940 760)"><rect width="280" height="120" class="card"/><rect width="6" height="120" class="accent"/><text x="22" y="27" class="label muted">信息对象</text><text x="22" y="62" class="title" font-size="20">可撤销记忆</text><text x="22" y="91" class="body">政策、证据与审批链摘要</text><text x="22" y="109" class="meta">confidence 93%</text></g>
+</svg>

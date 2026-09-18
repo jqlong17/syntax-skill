@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="840" viewBox="0 0 1400 840">
+  <rect width="1400" height="840" fill="#ffffff"/>
+  <style>
+    text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;fill:#111}
+    .muted{fill:#666}.small{font-size:14px}.label{font-size:12px;font-weight:800;letter-spacing:2px}.title{font-size:28px;font-weight:800}.body{font-size:16px}.meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;fill:#777}
+    .card{fill:#fff;stroke:#111;stroke-width:2}.line{fill:none;stroke:#9da59f;stroke-width:2}.line.focus{stroke:#d7874d;stroke-width:4}.ready{fill:#a6aaa5}.progress{fill:#d7874d}.verified{fill:#5a927f}.needs{fill:#c96766}
+  </style>
+  <line x1="40" y1="104" x2="1360" y2="104" stroke="#111" stroke-width="2"/>
+  <text x="40" y="44" class="label muted">SYNTAX AGENT WORKBENCH / DEMO</text>
+  <text x="40" y="82" class="title">报销审批 Agent · 认知流程状态图</text>
+  <text x="1110" y="48" class="small muted">真实 gpt-5.5 结构化响应</text>
+  <text x="1110" y="76" class="meta">6 nodes / 12 entities / 18 relations</text>
+  <g transform="translate(40 132)">
+    <circle cx="8" cy="8" r="7" class="ready"/><text x="23" y="14" class="small muted">待处理</text>
+    <path d="M95 8h36" class="line"/><path d="M127 3l8 5-8 5" fill="none" stroke="#9da59f" stroke-width="2"/>
+    <circle cx="153" cy="8" r="7" class="progress"/><text x="168" y="14" class="small muted">进行中</text>
+    <path d="M260 8h36" class="line"/><path d="M292 3l8 5-8 5" fill="none" stroke="#9da59f" stroke-width="2"/>
+    <circle cx="318" cy="8" r="7" class="needs"/><text x="333" y="14" class="small muted">待确认</text>
+    <path d="M425 8h36" class="line"/><path d="M457 3l8 5-8 5" fill="none" stroke="#9da59f" stroke-width="2"/>
+    <circle cx="483" cy="8" r="7" class="verified"/><text x="498" y="14" class="small muted">已验证</text>
+  </g>
+  <g>
+    <path d="M320 430C410 350 440 270 500 230" class="line"/>
+    <path d="M320 430C410 430 445 430 500 430" class="line focus"/>
+    <path d="M320 430C410 510 445 590 500 630" class="line"/>
+    <path d="M820 430C900 430 930 430 1000 430" class="line focus"/>
+    <path d="M820 630C900 630 930 630 1000 630" class="line"/>
+    <path d="M1190 250C1260 250 1260 430 1190 430" class="line"/>
+    <path d="M1190 430C1260 430 1260 630 1190 630" class="line"/>
+  </g>
+  <g transform="translate(60 340)">
+    <rect width="260" height="180" class="card"/>
+    <rect width="6" height="180" class="progress"/>
+    <text x="24" y="28" class="label muted">GOAL</text><text x="24" y="62" class="title" font-size="22">理解用户目标</text>
+    <text x="24" y="96" class="body">完成可审计、可升级、</text><text x="24" y="121" class="body">受权限约束的审批闭环。</text>
+    <text x="24" y="160" class="meta">confidence 97% · ready</text>
+  </g>
+  <g transform="translate(500 140)">
+    <rect width="320" height="180" class="card"/><rect width="6" height="180" class="progress"/>
+    <text x="24" y="28" class="label muted">DEPENDENCY</text><text x="24" y="62" class="title" font-size="22">实体与关系</text>
+    <text x="24" y="96" class="body">报销单、发票、角色、政策、</text><text x="24" y="121" class="body">审批、财务和审计对象。</text>
+    <text x="24" y="160" class="meta">confidence 95% · in_progress</text>
+  </g>
+  <g transform="translate(500 340)">
+    <rect width="320" height="180" class="card"/><rect width="6" height="180" class="verified"/>
+    <text x="24" y="28" class="label muted">CONSTRAINT</text><text x="24" y="62" class="title" font-size="22">约束与不确定性</text>
+    <text x="24" y="96" class="body">5000 元阈值、材料一致性、</text><text x="24" y="121" class="body">审批前置和权限规则。</text>
+    <text x="24" y="160" class="meta">confidence 96% · verified</text>
+  </g>
+  <g transform="translate(500 540)">
+    <rect width="320" height="180" class="card"/><rect width="6" height="180" class="progress"/>
+    <text x="24" y="28" class="label muted">PLAN</text><text x="24" y="62" class="title" font-size="22">执行计划</text>
+    <text x="24" y="96" class="body">抽取 → 核验 → 政策判断 →</text><text x="24" y="121" class="body">路由 / 追问 → 审批 → 审计。</text>
+    <text x="24" y="160" class="meta">confidence 96% · in_progress</text>
+  </g>
+  <g transform="translate(1000 340)">
+    <rect width="320" height="180" class="card"/><rect width="6" height="180" class="ready"/>
+    <text x="24" y="28" class="label muted">MEMORY</text><text x="24" y="62" class="title" font-size="22">可恢复记忆</text>
+    <text x="24" y="96" class="body">政策版本、证据来源、审批链</text><text x="24" y="121" class="body">和撤销入口。</text>
+    <text x="24" y="160" class="meta">confidence 93% · ready</text>
+  </g>
+  <g transform="translate(1000 540)">
+    <rect width="320" height="180" class="card"/><rect width="6" height="180" class="ready"/>
+    <text x="24" y="28" class="label muted">VERIFICATION</text><text x="24" y="62" class="title" font-size="22">验证与裁决</text>
+    <text x="24" y="96" class="body">审批通过、证据完整、权限</text><text x="24" y="121" class="body">有效后才允许写入财务系统。</text>
+    <text x="24" y="160" class="meta">confidence 95% · ready</text>
+  </g>
+</svg>

@@ -44,7 +44,9 @@
 .stateFlowDot[data-status="needs_input"] { background: #c96766; }
 .stateFlowDot[data-status="verified"] { background: #5a927f; }
 .networkStage { position: relative; width: 930px; height: 540px; margin: 0 auto; }
+.knowledgeStage { height: 980px; }
 .networkEdges, .networkNodes { position: absolute; inset: 0; width: 930px; height: 540px; }
+.knowledgeStage .networkEdges, .knowledgeStage .networkNodes { height: 980px; }
 .networkEdges { z-index: 0; overflow: visible; }
 .networkEdge { fill: none; stroke: #aeb4af; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .knowledgeEdge { fill: none; stroke: #6c7a86; stroke-width: 1.4; vector-effect: non-scaling-stroke; }

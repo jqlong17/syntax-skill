@@ -116,11 +116,20 @@ const statusOrder: NodeStatus[] = ["ready", "in_progress", "needs_input", "verif
 const knowledgeNodePositions: Record<string, { x: number; y: number }> = {
   user: { x: 28, y: 28 },
   agent: { x: 330, y: 28 },
-  task: { x: 330, y: 190 },
-  memory_record: { x: 638, y: 28 },
-  evidence: { x: 638, y: 190 },
-  policy: { x: 330, y: 352 },
-  tool: { x: 638, y: 352 },
+  employee: { x: 638, y: 28 },
+  expense_report: { x: 28, y: 190 },
+  invoice: { x: 330, y: 190 },
+  extraction_result: { x: 638, y: 190 },
+  reimbursement_policy: { x: 28, y: 352 },
+  policy_version: { x: 330, y: 352 },
+  manager: { x: 638, y: 352 },
+  approval_record: { x: 28, y: 514 },
+  finance_system: { x: 330, y: 514 },
+  finance_staff: { x: 638, y: 514 },
+  audit_log: { x: 28, y: 676 },
+  evidence: { x: 330, y: 676 },
+  human_review: { x: 638, y: 676 },
+  memory_record: { x: 28, y: 838 },
 };
 
 const knowledgeNodeWidth = 246;
@@ -258,6 +267,7 @@ type ModelPatch = {
   nodes?: Partial<AgentNode>[];
   entities?: Partial<KnowledgeEntity>[];
   relations?: Partial<KnowledgeRelation>[];
+  unresolved?: string[];
 };
 
 type ModelResponse = {
@@ -285,7 +295,10 @@ function extractJsonObject(content: string): ModelResponse | null {
   const candidates = [normalized];
   const firstBrace = normalized.indexOf("{");
   const lastBrace = normalized.lastIndexOf("}");
-  if (firstBrace >= 0 && lastBrace > firstBrace) candidates.push(normalized.slice(firstBrace, lastBrace + 1));
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    const extracted = normalized.slice(firstBrace, lastBrace + 1);
+    candidates.push(extracted, `${extracted}}`, `${extracted}}}`);
+  }
 
   for (const candidate of candidates) {
     try {
@@ -315,7 +328,7 @@ function parseModelResponse(content: string, state: AgentState, userText: string
       ...node,
       confidence: typeof node.confidence === "number" ? Math.max(0, Math.min(1, node.confidence)) : undefined,
     }));
-    const nextState = updateNodes({ ...state, summary: patch.summary ?? state.summary }, safeNodes, patch.focus);
+    const nextState = updateNodes({ ...state, summary: patch.summary ?? state.summary, unresolved: Array.isArray(patch.unresolved) ? patch.unresolved.slice(0, 8) : state.unresolved }, safeNodes, patch.focus);
     return { reply: parsed.reply ?? "我完成了结构化分析，但没有返回额外说明。", nextState: upsertKnowledgeGraph(nextState, patch.entities ?? [], patch.relations ?? []), parsed: true };
   }
 
@@ -418,8 +431,8 @@ export default function Home() {
     return (
       <div className={styles.networkViewport} aria-label="业务知识图谱">
         <div className={styles.knowledgeIntro}><span>{copy.entitySummary}</span><span>{agentState.entities.length} {locale === "zh" ? "个实体" : "entities"}</span><span>{agentState.relations.length} {copy.relationSummary}</span></div>
-        <div className={styles.networkStage}>
-          <svg className={styles.networkEdges} viewBox="0 0 930 540" role="img" aria-label="实体关系连线">
+        <div className={`${styles.networkStage} ${styles.knowledgeStage}`}>
+          <svg className={styles.networkEdges} viewBox="0 0 930 980" role="img" aria-label="实体关系连线">
             <defs>
               <marker id="knowledge-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
                 <path d="M0,0 L8,4 L0,8 z" fill="#8d938e" />
@@ -520,7 +533,7 @@ export default function Home() {
           temperature: 0.2,
           stream: true,
           messages: [
-            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次都必须只返回一个有效 JSON 对象，不要 Markdown、不要代码围栏、不要解释性前后缀。格式是 {reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>,entities?:Array<{id:string,name:string,type:string,detail?:string,confidence?:number}>,relations?:Array<{id:string,source:string,target:string,type:string,confidence?:number}>}}。即使用户只是打招呼，也返回 patch:{}。流程节点只能更新已有节点 id；业务图谱可以新增或更新与当前请求直接相关的实体和关系，但关系的 source 与 target 必须存在于当前或本次新增的实体中。不要伪造工具结果、事实或已完成状态。模型提出候选，验证器和用户决定是否接受。" },
+            { role: "system", content: "你是 Syntax Agent Workbench 中的架构助手。每次只返回一个有效 JSON 对象，不要 Markdown、代码围栏或解释性前后缀。格式：{reply:string,patch:{focus?:string,summary?:string,nodes?:Array<{id:string,label?:string,status?:'ready'|'in_progress'|'needs_input'|'verified',detail?:string,confidence?:number}>,entities?:Array<{id:string,name:string,type:string,detail?:string,confidence?:number}>,relations?:Array<{id:string,source:string,target:string,type:string,confidence?:number}>,unresolved?:string[]}}。打招呼时返回 patch:{}。流程节点只能更新已有 id；业务图谱只返回与当前请求直接相关的新增或变更实体和关系，source/target 必须存在于当前或本次新增实体中。为保证稳定性：最多返回 12 个 entities、18 个 relations 和 8 个 unresolved；不要重复未变化的实体或关系；detail 最多 80 个中文字符，relation type 最多 12 个中文字符；优先保留权限、证据、记忆、工具、人工确认和关键业务对象。不要把模型建议写成已完成事实。" },
             ...messages.slice(-8).map((message) => ({ role: message.role, content: message.content })),
             { role: "user", content: text },
             { role: "user", content: `当前结构 JSON：${visibleJson}` },

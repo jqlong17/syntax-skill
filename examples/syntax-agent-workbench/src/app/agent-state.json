@@ -1,77 +1,59 @@
 {
-  "title": "Agent 记忆系统设计",
-  "summary": "把一次自然语言请求拆解为可验证的任务结构。",
-  "focus": "任务图",
+  "title": "报销审批 Agent 认知系统",
+  "summary": "建立受权限、证据和审批约束的报销闭环。",
+  "focus": "报销审批 Agent",
   "nodes": [
-    {
-      "id": "goal",
-      "label": "理解用户目标",
-      "kind": "goal",
-      "status": "in_progress",
-      "detail": "识别目标、边界和成功标准。",
-      "confidence": 0.86,
-      "children": ["entities", "constraints", "plan"]
-    },
-    {
-      "id": "entities",
-      "label": "实体与关系",
-      "kind": "dependency",
-      "status": "ready",
-      "detail": "用户、任务、记忆条目和证据来源。",
-      "confidence": 0.72
-    },
-    {
-      "id": "constraints",
-      "label": "约束与不确定性",
-      "kind": "constraint",
-      "status": "needs_input",
-      "detail": "仍需确认：长期记忆的保留边界。",
-      "confidence": 0.48
-    },
-    {
-      "id": "plan",
-      "label": "执行计划",
-      "kind": "plan",
-      "status": "ready",
-      "detail": "观察 → 结构化 → 记忆 → 验证。",
-      "confidence": 0.79,
-      "children": ["memory", "verification"]
-    },
-    {
-      "id": "memory",
-      "label": "可恢复记忆",
-      "kind": "memory",
-      "status": "ready",
-      "detail": "摘要保留来源、时间、置信度和重建路径。",
-      "confidence": 0.68
-    },
-    {
-      "id": "verification",
-      "label": "验证与裁决",
-      "kind": "verification",
-      "status": "verified",
-      "detail": "模型提出候选，规则和证据决定是否接受。",
-      "confidence": 0.91
-    }
+    { "id": "goal", "label": "理解用户目标", "kind": "goal", "status": "ready", "detail": "目标明确：完成可审计、可升级、受权限约束的报销审批闭环。", "confidence": 0.97, "children": ["entities", "constraints", "plan"] },
+    { "id": "entities", "label": "实体与关系", "kind": "dependency", "status": "in_progress", "detail": "已补齐报销单、发票、角色、政策版本、审批、财务系统和审计对象。", "confidence": 0.95 },
+    { "id": "constraints", "label": "约束与不确定性", "kind": "constraint", "status": "verified", "detail": "5000元阈值、材料一致性、政策歧义和审批前置均已转成规则。", "confidence": 0.96 },
+    { "id": "plan", "label": "执行计划", "kind": "plan", "status": "in_progress", "detail": "抽取→核验→政策判断→路由或追问→审批→写财务→审计记忆。", "confidence": 0.96, "children": ["memory", "verification"] },
+    { "id": "memory", "label": "可恢复记忆", "kind": "memory", "status": "ready", "detail": "记录证据来源、政策版本、审批链和可撤销记忆，保留撤销入口。", "confidence": 0.93 },
+    { "id": "verification", "label": "验证与裁决", "kind": "verification", "status": "ready", "detail": "写入财务系统前检查审批通过、证据完整和权限有效。", "confidence": 0.95 }
   ],
   "entities": [
     { "id": "user", "name": "用户", "type": "主体", "detail": "提出目标、约束和确认要求的人。", "confidence": 0.96 },
-    { "id": "agent", "name": "Agent", "type": "执行主体", "detail": "理解请求、拆解任务并提出行动候选。", "confidence": 0.93 },
-    { "id": "task", "name": "任务", "type": "业务对象", "detail": "需要被规划、执行和验证的目标对象。", "confidence": 0.9 },
-    { "id": "memory_record", "name": "记忆条目", "type": "信息对象", "detail": "带有来源、时间、置信度和重建路径的可恢复信息。", "confidence": 0.86 },
-    { "id": "evidence", "name": "证据来源", "type": "信息对象", "detail": "支持或否定某个结论的文档、工具结果或观察。", "confidence": 0.82 },
-    { "id": "tool", "name": "工具", "type": "能力对象", "detail": "执行外部动作、读取数据或进行验证的接口。", "confidence": 0.8 },
-    { "id": "policy", "name": "权限与规则", "type": "约束对象", "detail": "决定哪些动作可以执行、哪些结果需要人工确认。", "confidence": 0.78 }
+    { "id": "agent", "name": "Agent", "type": "执行主体", "detail": "理解请求、抽取字段、校验规则并提出行动候选。", "confidence": 0.98 },
+    { "id": "evidence", "name": "证据来源", "type": "证据对象", "detail": "支持或否定结论的发票、政策、工具结果或审批材料。", "confidence": 0.98 },
+    { "id": "memory_record", "name": "可撤销记忆", "type": "信息对象", "detail": "保存证据来源、政策版本和审批链的可恢复摘要。", "confidence": 0.93 },
+    { "id": "expense_report", "name": "报销单", "type": "业务对象", "detail": "员工提交的报销单，包含金额、日期、部门、项目及审批状态。", "confidence": 0.99 },
+    { "id": "invoice", "name": "发票", "type": "证据对象", "detail": "发票文件及其号码、金额、日期等可核验信息。", "confidence": 0.99 },
+    { "id": "extraction_result", "name": "抽取结果", "type": "中间对象", "detail": "金额、日期、部门、项目和发票字段的结构化抽取结果。", "confidence": 0.96 },
+    { "id": "employee", "name": "员工", "type": "角色", "detail": "提交报销、补充材料并接收追问的角色。", "confidence": 0.99 },
+    { "id": "manager", "name": "部门经理", "type": "角色", "detail": "金额超过5000元时负责审批的部门经理。", "confidence": 0.99 },
+    { "id": "finance_staff", "name": "财务人员", "type": "角色", "detail": "负责财务系统操作、复核和异常处理的角色。", "confidence": 0.96 },
+    { "id": "reimbursement_policy", "name": "报销政策", "type": "规则对象", "detail": "报销资格、金额阈值、材料要求和升级规则。", "confidence": 0.99 },
+    { "id": "policy_version", "name": "政策版本", "type": "版本对象", "detail": "本次校验实际采用的报销政策版本。", "confidence": 0.98 },
+    { "id": "approval_record", "name": "审批记录", "type": "审计对象", "detail": "记录审批人、时间、结果、依据和审批前置条件。", "confidence": 0.99 },
+    { "id": "finance_system", "name": "财务系统", "type": "外部系统", "detail": "仅在审批通过后接收合规报销数据的财务系统。", "confidence": 0.98 },
+    { "id": "audit_log", "name": "审计记录", "type": "审计对象", "detail": "记录写入时间、操作者、数据快照和证据链。", "confidence": 0.98 },
+    { "id": "human_review", "name": "人工复核", "type": "处置对象", "detail": "发票缺失、金额不一致或政策不明确时的人工处置。", "confidence": 0.99 }
   ],
   "relations": [
     { "id": "user-asks-agent", "source": "user", "target": "agent", "type": "提出请求", "confidence": 0.96 },
-    { "id": "agent-decomposes-task", "source": "agent", "target": "task", "type": "拆解", "confidence": 0.9 },
-    { "id": "task-writes-memory", "source": "task", "target": "memory_record", "type": "沉淀", "confidence": 0.84 },
-    { "id": "memory-supported-by-evidence", "source": "memory_record", "target": "evidence", "type": "来源于", "confidence": 0.84 },
-    { "id": "agent-uses-tool", "source": "agent", "target": "tool", "type": "调用", "confidence": 0.8 },
-    { "id": "policy-governs-tool", "source": "policy", "target": "tool", "type": "约束", "confidence": 0.78 },
-    { "id": "user-confirms-result", "source": "user", "target": "task", "type": "确认", "confidence": 0.74 }
+    { "id": "agent-extracts-extraction_result", "source": "agent", "target": "extraction_result", "type": "抽取字段", "confidence": 0.98 },
+    { "id": "extraction_result-populates-expense_report", "source": "extraction_result", "target": "expense_report", "type": "填充报销单", "confidence": 0.97 },
+    { "id": "expense_report-attached-invoice", "source": "expense_report", "target": "invoice", "type": "关联发票", "confidence": 0.99 },
+    { "id": "agent-checks-reimbursement_policy", "source": "agent", "target": "reimbursement_policy", "type": "校验政策", "confidence": 0.98 },
+    { "id": "reimbursement_policy-has-policy_version", "source": "reimbursement_policy", "target": "policy_version", "type": "包含版本", "confidence": 0.99 },
+    { "id": "expense_report-subject-to-policy", "source": "expense_report", "target": "reimbursement_policy", "type": "受政策约束", "confidence": 0.99 },
+    { "id": "expense_report-submitted-by-employee", "source": "employee", "target": "expense_report", "type": "提交", "confidence": 0.99 },
+    { "id": "expense_report-routes-to-manager", "source": "expense_report", "target": "manager", "type": "超额路由", "confidence": 0.99 },
+    { "id": "manager-approves-expense_report", "source": "manager", "target": "expense_report", "type": "经理审批", "confidence": 0.99 },
+    { "id": "expense_report-escalates-human_review", "source": "expense_report", "target": "human_review", "type": "异常转人工", "confidence": 0.99 },
+    { "id": "approval_record-records-approval", "source": "approval_record", "target": "expense_report", "type": "记录审批", "confidence": 0.99 },
+    { "id": "approval_record-precedes-finance_write", "source": "approval_record", "target": "finance_system", "type": "审批前置", "confidence": 0.99 },
+    { "id": "agent-writes-finance_system", "source": "agent", "target": "finance_system", "type": "写入", "confidence": 0.97 },
+    { "id": "finance_staff-operates-finance_system", "source": "finance_staff", "target": "finance_system", "type": "操作", "confidence": 0.95 },
+    { "id": "finance_system-generates-audit_log", "source": "finance_system", "target": "audit_log", "type": "生成审计", "confidence": 0.98 },
+    { "id": "audit_log-retains-evidence", "source": "audit_log", "target": "evidence", "type": "留存证据", "confidence": 0.98 },
+    { "id": "reimbursement_policy-defines-role-permissions", "source": "reimbursement_policy", "target": "employee", "type": "约束角色权限", "confidence": 0.94 },
+    { "id": "approval_record-stores-revocable-memory", "source": "approval_record", "target": "memory_record", "type": "可撤销沉淀", "confidence": 0.94 }
   ],
-  "unresolved": ["长期记忆保留多久？", "哪些动作需要人工确认？"],
-  "updatedAt": "刚刚"
+  "unresolved": [
+    "5000元以下是否需要审批？",
+    "政策版本冲突如何处理？",
+    "记忆保留期与撤销范围是什么？",
+    "哪些异常允许 Agent 自动处理？"
+  ],
+  "updatedAt": "演示场景"
 }

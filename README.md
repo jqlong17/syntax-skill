@@ -142,11 +142,29 @@ Skill 由一个主入口、一个共享的 Agent 设计协议，以及八个可�
 
 仓库包含一个可运行的 Next.js 示例：[examples/syntax-agent-workbench](examples/syntax-agent-workbench)。它把本 Skill 的方法论变成一个最小可交互产品：
 
-- 左侧约三分之二是可展开的依存任务图，底层状态由 JSON 驱动；
+- 左侧约三分之二包含两种互补图：认知流程状态图，以及会随对话演化的业务认知图谱；
+- 认知流程图回答“下一步做什么”，业务认知图谱回答“系统知道哪些实体、对象类型和关系”；
 - 右侧是结构化架构助手，可以通过对话更新左侧节点；
+- 模型 patch 可以同时更新流程节点、实体、关系和待解决问题；
 - 没有 API Key 时可以直接使用本地演示模式；
 - 配置 API Key 后，前端调用 OpenAI-compatible 的 `/chat/completions` 接口；
 - 支持复制 JSON、导出当前状态、重置工作区和显示待解决依赖。
+
+### 真实复杂场景演示：报销审批 Agent
+
+使用 `gpt-5.5` 对一个复杂的企业报销审批场景进行了真实测试：员工提交报销单和发票，Agent 抽取字段、校验政策，金额超过 5000 元时路由给部门经理，异常时追问或转人工，审批通过后才写入财务系统，并生成审计记录和可撤销记忆。
+
+这次测试验证了三件事：
+
+1. 流程图能够表达抽取、核验、路由、审批、写入和审计之间的状态依存关系；
+2. 业务认知图谱能够抽取角色、报销单、发票、政策版本、审批记录、财务系统、审计记录和人工复核等实体；
+3. 经过“限制实体 / 关系数量 + 限制详情长度 + JSON 尾部容错”的优化后，复杂响应可以稳定解析并落入前端状态。
+
+![报销审批 Agent 认知流程状态图](docs/demo/expense-agent-process.png)
+
+![报销审批 Agent 业务认知图谱](docs/demo/expense-agent-knowledge.png)
+
+本次真实请求的结果摘要：`6` 个流程节点更新、`12` 个业务实体新增、`18` 条业务关系新增，`gpt-5.5` 返回 `HTTP 200`，结构化 JSON 成功解析。演示状态保存在 [examples/syntax-agent-workbench/src/app/agent-state.json](examples/syntax-agent-workbench/src/app/agent-state.json) 中。
 
 启动示例：
 
